@@ -1,17 +1,46 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, Clock, Scissors, ChevronRight, ChevronLeft, 
-  Menu, X, Check, MapPin, Star, Sparkles, MessageCircle, 
+  Clock, Scissors, ChevronRight, ChevronLeft, 
+  X, Check, MapPin, Sparkles, MessageCircle, 
   Users, Settings, LogOut, Camera, Lock, 
   Edit, Trash2, Plus, AlertCircle, Flower2
 } from 'lucide-react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
-// Configuración Híbrida: Funciona tanto en este entorno interactivo como en tu VS Code local (.env.local)
-const getFirebaseConfig = () => {
+declare const __firebase_config: string | undefined;
+declare const __app_id: string | undefined;
+declare const __initial_auth_token: string | undefined;
+
+export interface ServiceItem {
+  id: string;
+  category: string;
+  name: string;
+  price: string;
+  duration: string;
+  image: string;
+  description: string;
+}
+
+export interface CustomerItem {
+  id: string;
+  name: string;
+  phone: string;
+  lastVisit: string;
+  service: string;
+  days: number;
+}
+
+export interface TemplateItem {
+  id: string;
+  name: string;
+  content: string;
+}
+
+// Configuración Híbrida: Funciona tanto en este entorno interactivo como en tu VS Code local y Vercel
+const getFirebaseConfig = (): Record<string, string | undefined> => {
   if (typeof __firebase_config !== 'undefined' && __firebase_config) {
     try {
       return JSON.parse(__firebase_config);
@@ -42,11 +71,15 @@ const appId = typeof __app_id !== 'undefined'
   ? __app_id 
   : (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_ID ? process.env.NEXT_PUBLIC_APP_ID : 'warmi-tika-studio');
 
-// Fondo oficial generado con IA para Warmi T'ika (Marco botánico de rosas y plantas):
 const DEFAULT_HERO_BG = "https://i.imgur.com/mD1A455.png";
 const DEFAULT_CARD_BG = "https://i.imgur.com/mD1A455.png";
 
-const Logo = ({ className = "h-12", color = "default" }) => (
+interface LogoProps {
+  className?: string;
+  color?: 'default' | 'white';
+}
+
+const Logo: React.FC<LogoProps> = ({ className = "h-12", color = "default" }) => (
   <div className={`flex items-center justify-start ${className}`}>
     <img 
       src="https://i.imgur.com/hiJkL1K.png" 
@@ -58,9 +91,25 @@ const Logo = ({ className = "h-12", color = "default" }) => (
   </div>
 );
 
-const Button = ({ children, variant = 'primary', className = '', onClick, disabled, type = 'button' }) => {
+interface ButtonProps {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'whatsapp';
+  className?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
+}
+
+const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  variant = 'primary', 
+  className = '', 
+  onClick, 
+  disabled = false, 
+  type = 'button' 
+}) => {
   const baseStyle = "inline-flex items-center justify-center px-5 py-2.5 rounded-full font-medium transition-all duration-300";
-  const variants = {
+  const variants: Record<string, string> = {
     primary: "bg-gradient-to-r from-[#70415D] to-[#9b5d7e] text-white hover:opacity-95 shadow-md hover:shadow-lg",
     secondary: "bg-[#B87583] text-white hover:bg-[#a16270] shadow-sm",
     outline: "border-2 border-[#B87583] text-[#70415D] bg-white/80 backdrop-blur-sm hover:bg-[#FFF8F5]",
@@ -80,7 +129,14 @@ const Button = ({ children, variant = 'primary', className = '', onClick, disabl
   );
 };
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}
+
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-[#342A30]/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -104,7 +160,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-const initialMockServices = [
+const initialMockServices: ServiceItem[] = [
   { id: 's1', category: 'Cabello', name: 'Balayage Iluminado', price: 'Desde S/ 150', duration: '180 min', image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=600', description: 'Técnica de coloración a mano alzada para un acabado natural, suave y luminoso.' },
   { id: 's2', category: 'Cabello', name: 'Corte Boutique + Spa Capilar', price: 'S/ 60', duration: '60 min', image: 'https://images.unsplash.com/photo-1595476108010-b4d1f10d5e43?auto=format&fit=crop&q=80&w=600', description: 'Asesoría de imagen personalizada, lavado con hidratación botánica, corte y brushing profesional.' },
   { id: 's3', category: 'Uñas', name: 'Manicure Acrílica Floral', price: 'S/ 80', duration: '90 min', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059e98b?auto=format&fit=crop&q=80&w=600', description: 'Extensión esculpida, limpieza profunda de cutículas y esmaltado en gel de larga duración.' },
@@ -119,13 +175,12 @@ const mockStaff = [
   { id: 'st2', name: 'Sofía (Especialista en Uñas y Mirada)', roles: ['Uñas', 'Cejas', 'Pestañas'] }
 ];
 
-const mockInactiveCustomers = [
+const mockInactiveCustomers: CustomerItem[] = [
   { id: 'c1', name: 'Valeria Mendoza', phone: '912345678', lastVisit: '22/08/2026', service: 'Balayage Iluminado', days: 40 },
   { id: 'c2', name: 'Carla Rojas', phone: '987654321', lastVisit: '30/08/2026', service: 'Manicure Acrílica', days: 32 }
 ];
 
-// Banco de 20 plantillas anti-spam con el nombre oficial Warmi T'ika
-const ANTI_SPAM_TEMPLATES = [
+const ANTI_SPAM_TEMPLATES: TemplateItem[] = [
   { id: 't1', name: '1. Cariño floral y días exactos', content: "Hola {{nombre}} 🌷 ¡Qué lindo saludarte! Vimos que ya pasaron {{dias}} días desde tu visita para {{servicio}} en Warmi T'ika. Te extrañamos y preparamos {{beneficio}} con tu código {{codigo}} (válido hasta el {{fecha_vencimiento}}). ¡Te adjunto tu tarjeta VIP!" },
   { id: 't2', name: '2. Momento de engreírte', content: "¡Hola, {{nombre}}! 🌸 Hace {{dias}} días tuvimos el gusto de atenderte en Warmi T'ika. Sabemos que siempre viene bien una pausa entre rosas y calma, así que tienes {{beneficio}} usando el código {{codigo}} hasta el {{fecha_vencimiento}}." },
   { id: 't3', name: '3. Retoque de tu servicio favorito', content: "Hola {{nombre}} ✨ ¿Cómo has estado? Notamos que hace {{dias}} días te realizaste {{servicio}} con nosotras. Para que vuelvas a lucir radiante en Warmi T'ika, te regalamos {{beneficio}} con el código {{codigo}}." },
@@ -148,14 +203,23 @@ const ANTI_SPAM_TEMPLATES = [
   { id: 't20', name: '20. Mensaje corto y directo anti-spam', content: "Hola {{nombre}} 🌸 ¡Te esperamos en Warmi T'ika! Ya pasaron {{dias}} días desde tu visita de {{servicio}} y tienes {{beneficio}} disponible con el código {{codigo}} (vence el {{fecha_vencimiento}})." }
 ];
 
-// Función que dibuja la tarjeta 1080x1080 en alta resolución con el fondo floral, el logo y los datos de la clienta
-const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, days, service, bgUrl }) => {
+interface CardBlobParams {
+  customerFirstName: string;
+  benefit: string;
+  code: string;
+  days: number;
+  service: string;
+  bgUrl: string;
+}
+
+const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, days, service, bgUrl }: CardBlobParams): Promise<Blob | null> => {
   const canvas = document.createElement('canvas');
   canvas.width = 1080;
   canvas.height = 1080;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
 
-  const loadImage = (url) => new Promise((resolve) => {
+  const loadImage = (url: string): Promise<HTMLImageElement | null> => new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
@@ -163,7 +227,6 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
     img.src = url;
   });
 
-  // 1. Fondo base cálido por si la imagen externa tarda o bloquea CORS
   const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
   grad.addColorStop(0, '#F6E6E8');
   grad.addColorStop(0.5, '#FFF8F5');
@@ -171,7 +234,6 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 1080, 1080);
 
-  // Intentar pintar el fondo floral IA
   const bgImg = await loadImage(bgUrl || DEFAULT_CARD_BG);
   if (bgImg) {
     ctx.drawImage(bgImg, 0, 0, 1080, 1080);
@@ -184,13 +246,11 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
     ctx.beginPath(); ctx.arc(140, 960, 180, 0, Math.PI * 2); ctx.fill();
   }
 
-  // 2. Tarjeta central marfil translúcida
   ctx.fillStyle = 'rgba(255, 248, 245, 0.90)';
   ctx.beginPath();
   ctx.roundRect(110, 110, 860, 860, 44);
   ctx.fill();
 
-  // Borde doble elegante en oro rosado
   ctx.strokeStyle = '#B87583';
   ctx.lineWidth = 5;
   ctx.stroke();
@@ -201,7 +261,6 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
   ctx.roundRect(132, 132, 816, 816, 32);
   ctx.stroke();
 
-  // 3. Logo oficial de Warmi T'ika o cabecera elegante
   const logoImg = await loadImage('https://i.imgur.com/hiJkL1K.png');
   if (logoImg) {
     const logoW = 460;
@@ -217,7 +276,6 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
     ctx.fillText('BEAUTY STUDIO', 540, 280);
   }
 
-  // 4. Textos personalizados de la clienta
   ctx.textAlign = 'center';
   ctx.fillStyle = '#879681';
   ctx.font = 'bold 23px sans-serif';
@@ -231,7 +289,6 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
   ctx.font = '26px sans-serif';
   ctx.fillText(`Hace ${days || 30} días te atendimos en ${service || 'nuestro salón'}`, 540, 555);
 
-  // 5. Botón / Píldora central con el Descuento
   const pillGrad = ctx.createLinearGradient(240, 600, 840, 710);
   pillGrad.addColorStop(0, '#70415D');
   pillGrad.addColorStop(1, '#B87583');
@@ -244,7 +301,6 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
   ctx.font = 'bold 46px sans-serif';
   ctx.fillText((benefit || '20% DE DESCUENTO').toUpperCase(), 540, 673);
 
-  // 6. Pie de tarjeta con el Código y Vigencia
   ctx.strokeStyle = 'rgba(195, 130, 150, 0.45)';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -269,7 +325,13 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
   });
 };
 
-const PublicNavbar = ({ navigate, activeRoute, isCloudSynced }) => (
+interface PublicNavbarProps {
+  navigate: (route: string) => void;
+  activeRoute: string;
+  isCloudSynced: boolean;
+}
+
+const PublicNavbar: React.FC<PublicNavbarProps> = ({ navigate, activeRoute, isCloudSynced }) => (
   <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-[#C38296]/25 shadow-sm">
     <div className="max-w-6xl mx-auto px-4 h-22 py-2 flex items-center justify-between">
       <div className="cursor-pointer flex items-center gap-3" onClick={() => navigate('home')}>
@@ -311,12 +373,18 @@ const PublicNavbar = ({ navigate, activeRoute, isCloudSynced }) => (
   </header>
 );
 
-const HomeView = ({ navigate, services, customHeroBg, onSelectServiceFromHome }) => {
+interface HomeViewProps {
+  navigate: (route: string) => void;
+  services: ServiceItem[];
+  customHeroBg: string;
+  onSelectServiceFromHome: (service: ServiceItem) => void;
+}
+
+const HomeView: React.FC<HomeViewProps> = ({ navigate, services, customHeroBg, onSelectServiceFromHome }) => {
   const safeServices = Array.isArray(services) ? services : [];
 
   return (
     <div className="flex flex-col w-full">
-      {/* Portada Principal con el Fondo Floral/Botánico Oficial */}
       <section 
         className="relative w-full py-20 md:py-28 px-4 overflow-hidden bg-cover bg-center bg-no-repeat transition-all duration-700"
         style={{ backgroundImage: `url(${customHeroBg || DEFAULT_HERO_BG})` }}
@@ -359,7 +427,6 @@ const HomeView = ({ navigate, services, customHeroBg, onSelectServiceFromHome })
         </div>
       </section>
 
-      {/* Sección de Servicios Destacados con Fondo Floral Sutil */}
       <section 
         className="py-16 px-4 relative bg-cover bg-fixed bg-center"
         style={{ backgroundImage: `url(${customHeroBg || DEFAULT_HERO_BG})` }}
@@ -373,7 +440,7 @@ const HomeView = ({ navigate, services, customHeroBg, onSelectServiceFromHome })
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {safeServices.slice(0, 4).map(service => (
+            {safeServices.slice(0, 4).map((service) => (
               <div 
                 key={service.id} 
                 onClick={() => onSelectServiceFromHome(service)}
@@ -416,9 +483,16 @@ const HomeView = ({ navigate, services, customHeroBg, onSelectServiceFromHome })
   );
 };
 
-const CatalogView = ({ navigate, services, initialSelectedService, clearInitialSelected }) => {
+interface CatalogViewProps {
+  navigate: (route: string) => void;
+  services: ServiceItem[];
+  initialSelectedService: ServiceItem | null;
+  clearInitialSelected: () => void;
+}
+
+const CatalogView: React.FC<CatalogViewProps> = ({ navigate, services, initialSelectedService, clearInitialSelected }) => {
   const [activeCategory, setActiveCategory] = useState('Todos');
-  const [selectedService, setSelectedService] = useState(initialSelectedService || null);
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(initialSelectedService || null);
 
   useEffect(() => {
     if (initialSelectedService) {
@@ -431,11 +505,11 @@ const CatalogView = ({ navigate, services, initialSelectedService, clearInitialS
 
   const filteredServices = activeCategory === 'Todos'
     ? safeServices
-    : safeServices.filter(s => s.category === activeCategory);
+    : safeServices.filter((s) => s.category === activeCategory);
 
   const handleCloseModal = () => {
     setSelectedService(null);
-    if (clearInitialSelected) clearInitialSelected();
+    clearInitialSelected();
   };
 
   return (
@@ -451,7 +525,6 @@ const CatalogView = ({ navigate, services, initialSelectedService, clearInitialS
         </Button>
       </div>
 
-      {/* Botones de Categorías Funcionales */}
       <div className="flex gap-3 mb-10 overflow-x-auto pb-2">
         {categories.map(cat => (
           <button
@@ -468,9 +541,8 @@ const CatalogView = ({ navigate, services, initialSelectedService, clearInitialS
         ))}
       </div>
 
-      {/* Cuadrícula de Servicios */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredServices.map(service => (
+        {filteredServices.map((service) => (
           <div
             key={service.id}
             onClick={() => setSelectedService(service)}
@@ -504,7 +576,6 @@ const CatalogView = ({ navigate, services, initialSelectedService, clearInitialS
         ))}
       </div>
 
-      {/* Ventana Emergente (Modal) de Detalle del Servicio */}
       <Modal isOpen={!!selectedService} onClose={handleCloseModal} title="Detalle del Tratamiento">
         {selectedService && (
           <div className="flex flex-col gap-4">
@@ -562,9 +633,14 @@ const CatalogView = ({ navigate, services, initialSelectedService, clearInitialS
   );
 };
 
-const BookingFlow = ({ navigate, services }) => {
+interface BookingFlowProps {
+  navigate: (route: string) => void;
+  services: ServiceItem[];
+}
+
+const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
   const [step, setStep] = useState(1);
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [selectedTime, setSelectedTime] = useState('10:00');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -623,7 +699,7 @@ const BookingFlow = ({ navigate, services }) => {
           <div>
             <h2 className="text-2xl font-serif text-[#70415D] mb-6">1. Elige tu experiencia en Warmi T&apos;ika</h2>
             <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
-              {safeServices.map(service => (
+              {safeServices.map((service) => (
                 <div 
                   key={service.id} 
                   onClick={() => setSelectedService(service)}
@@ -750,11 +826,16 @@ const BookingFlow = ({ navigate, services }) => {
   );
 };
 
-const AdminLogin = ({ onLogin, onBack }) => {
+interface AdminLoginProps {
+  onLogin: () => void;
+  onBack: () => void;
+}
+
+const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === 'admin') {
       onLogin();
@@ -787,7 +868,7 @@ const AdminLogin = ({ onLogin, onBack }) => {
             />
             {error && (
               <p className="text-red-600 text-xs mt-2 font-bold flex items-center">
-                <AlertCircle size={14} className="mr-1"/> Clave incorrecta. Usa "admin".
+                <AlertCircle size={14} className="mr-1"/> Clave incorrecta. Usa &quot;admin&quot;.
               </p>
             )}
           </div>
@@ -800,22 +881,34 @@ const AdminLogin = ({ onLogin, onBack }) => {
   );
 };
 
-const InvitationsTab = ({ 
+interface InvitationsTabProps {
+  customCardBg: string;
+  setCustomCardBg: (val: string) => void;
+  customHeroBg: string;
+  setCustomHeroBg: (val: string) => void;
+  customers: CustomerItem[];
+  onSaveCustomer: (cust: CustomerItem) => Promise<void>;
+  onDeleteCustomer: (id: string) => Promise<void>;
+  onSaveSettings: (heroBg: string, cardBg: string) => Promise<void>;
+  isCloudSynced: boolean;
+}
+
+const InvitationsTab: React.FC<InvitationsTabProps> = ({ 
   customCardBg, setCustomCardBg, 
   customHeroBg, setCustomHeroBg,
   customers, onSaveCustomer, onDeleteCustomer,
   onSaveSettings, isCloudSynced
 }) => {
   const safeCustomers = Array.isArray(customers) && customers.length > 0 ? customers : mockInactiveCustomers;
-  const [selectedTemplate, setSelectedTemplate] = useState(ANTI_SPAM_TEMPLATES[0]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState(safeCustomers[0]?.id || 'c1');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem>(ANTI_SPAM_TEMPLATES[0]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(safeCustomers[0]?.id || 'c1');
   const [benefit, setBenefit] = useState("20% de descuento");
   const [code, setCode] = useState("WARMI20");
   const [cardNotice, setCardNotice] = useState('');
   const [isGeneratingImg, setIsGeneratingImg] = useState(false);
 
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [editingCustomer, setEditingCustomer] = useState<string | null>(null);
   const [customerForm, setCustomerForm] = useState({
     name: '',
     phone: '',
@@ -824,13 +917,13 @@ const InvitationsTab = ({
     days: 30
   });
 
-  const selectedCustomer = safeCustomers.find(c => c.id === selectedCustomerId) || safeCustomers[0];
+  const selectedCustomer = safeCustomers.find((c) => c.id === selectedCustomerId) || safeCustomers[0];
 
   const customerFirstName = (selectedCustomer && selectedCustomer.name) 
     ? selectedCustomer.name.split(' ')[0] 
     : 'Hermosa';
 
-  const buildMessageForCustomer = (customerObj, templateObj) => {
+  const buildMessageForCustomer = (customerObj: CustomerItem | undefined, templateObj: TemplateItem | undefined) => {
     const targetCust = customerObj || selectedCustomer;
     const targetTpl = templateObj || selectedTemplate || ANTI_SPAM_TEMPLATES[0];
     const firstName = targetCust?.name ? targetCust.name.split(' ')[0] : 'Hermosa';
@@ -853,7 +946,7 @@ const InvitationsTab = ({
   const customerPhone = (selectedCustomer?.phone || '987654321').replace(/\D/g, '');
   const waLink = `https://wa.me/51${customerPhone}?text=${encodeURIComponent(getParsedText())}`;
 
-  const handleDownloadCard = async (custOverride = null) => {
+  const handleDownloadCard = async (custOverride: CustomerItem | null = null) => {
     const target = custOverride || selectedCustomer;
     const firstName = target?.name ? target.name.split(' ')[0] : 'Hermosa';
     setIsGeneratingImg(true);
@@ -883,7 +976,7 @@ const InvitationsTab = ({
     setIsGeneratingImg(false);
   };
 
-  const handleSendWhatsAppWithImage = async (custOverride = null, useRandomTemplate = false) => {
+  const handleSendWhatsAppWithImage = async (custOverride: CustomerItem | null = null, useRandomTemplate = false) => {
     const target = custOverride || selectedCustomer;
     if (!target) return;
     setSelectedCustomerId(target.id);
@@ -925,19 +1018,19 @@ const InvitationsTab = ({
             setCardNotice(`✅ Imagen y mensaje listos para compartir en WhatsApp con ${firstName}.`);
             setIsGeneratingImg(false);
             return;
-          } catch (shareErr) {
+          } catch {
             // Continúa al flujo de escritorio
           }
         }
 
         let copiedToClipboard = false;
-        if (navigator.clipboard && window.ClipboardItem) {
+        if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
           try {
             await navigator.clipboard.write([
-              new window.ClipboardItem({ 'image/png': blob })
+              new ClipboardItem({ 'image/png': blob })
             ]);
             copiedToClipboard = true;
-          } catch (clipErr) {
+          } catch {
             copiedToClipboard = false;
           }
         }
@@ -964,7 +1057,7 @@ const InvitationsTab = ({
     window.open(directWaUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleOpenCustomerModal = (cust = null) => {
+  const handleOpenCustomerModal = (cust: CustomerItem | null = null) => {
     if (cust) {
       setEditingCustomer(cust.id);
       setCustomerForm({
@@ -987,10 +1080,10 @@ const InvitationsTab = ({
     setIsCustomerModalOpen(true);
   };
 
-  const handleCustomerSubmit = async (e) => {
+  const handleCustomerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newId = editingCustomer || `c${Date.now()}`;
-    const newCustomerObj = {
+    const newCustomerObj: CustomerItem = {
       id: newId,
       name: customerForm.name.trim(),
       phone: customerForm.phone.trim(),
@@ -1005,14 +1098,13 @@ const InvitationsTab = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Estado de Sincronización Firebase */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white px-5 py-3.5 rounded-2xl border border-[#C38296]/30 shadow-sm">
         <div className="flex items-center gap-2.5">
           <span className={`w-3 h-3 rounded-full ${isCloudSynced ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
           <span className="text-xs font-bold text-[#342A30]">
             {isCloudSynced 
               ? "Warmi T'ika Cloud (Firebase): Tus clientas, fondos y servicios se guardan automáticamente en tiempo real." 
-              : "Modo Local / Sincronizando: Configura tu archivo .env.local en VS Code para conectar tu propio Firebase."}
+              : "Modo Local / Sincronizando: Configura tus variables de entorno para conectar tu propio Firebase."}
           </span>
         </div>
         <Button 
@@ -1024,7 +1116,6 @@ const InvitationsTab = ({
         </Button>
       </div>
 
-      {/* Bloque para pegar el Fondo de la Web generado con el Prompt de IA */}
       <div className="bg-[#FFF8F5] p-6 rounded-2xl border-2 border-[#B87583]/40 shadow-sm">
         <h3 className="font-serif text-xl text-[#70415D] mb-2 flex items-center gap-2">
           <Flower2 size={20} className="text-[#B87583]" /> Fondo Floral de la Página Web — Warmi T&apos;ika (IA)
@@ -1056,7 +1147,6 @@ const InvitationsTab = ({
         </div>
       </div>
 
-      {/* Editor de Invitaciones y Retención 30 días */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-5">
           <div className="flex items-center justify-between border-b pb-3">
@@ -1084,7 +1174,7 @@ const InvitationsTab = ({
                 value={selectedCustomer?.id || ''}
                 onChange={(e) => setSelectedCustomerId(e.target.value)}
               >
-                {safeCustomers.map(c => (
+                {safeCustomers.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.phone}) — {c.days} días (Último: {c.service})
                   </option>
@@ -1203,7 +1293,6 @@ const InvitationsTab = ({
           </div>
         </div>
 
-        {/* Vista Previa de Mensaje y Arte Exportable Floral */}
         <div className="space-y-6">
           <div className="bg-[#E7F6EC] p-5 rounded-2xl border border-[#C2E7CE] shadow-sm">
             <div className="flex items-center justify-between mb-2">
@@ -1217,7 +1306,6 @@ const InvitationsTab = ({
             <p className="text-sm text-[#0F4221] leading-relaxed">{getParsedText()}</p>
           </div>
 
-          {/* Arte Exportable 1080x1080 con Estilo Botánico/Floral */}
           <div className="bg-white p-6 rounded-2xl flex flex-col items-center justify-center border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between w-full mb-3">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
@@ -1261,7 +1349,6 @@ const InvitationsTab = ({
         </div>
       </div>
 
-      {/* Directorio Completo de Clientas Registradas */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 border-b pb-4">
           <div>
@@ -1289,7 +1376,7 @@ const InvitationsTab = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {safeCustomers.map(cust => {
+              {safeCustomers.map((cust) => {
                 const isSelected = cust.id === selectedCustomer?.id;
                 return (
                   <tr 
@@ -1358,7 +1445,6 @@ const InvitationsTab = ({
         </div>
       </div>
 
-      {/* Modal para Agregar o Editar Clienta */}
       <Modal 
         isOpen={isCustomerModalOpen} 
         onClose={() => setIsCustomerModalOpen(false)} 
@@ -1415,7 +1501,7 @@ const InvitationsTab = ({
                 type="number"
                 min="0"
                 value={customerForm.days} 
-                onChange={e => setCustomerForm({...customerForm, days: e.target.value})} 
+                onChange={e => setCustomerForm({...customerForm, days: Number(e.target.value)})} 
                 className="w-full border border-[#C38296]/50 rounded-xl p-2.5 text-sm outline-none" 
               />
             </div>
@@ -1432,7 +1518,23 @@ const InvitationsTab = ({
   );
 };
 
-const AdminDashboard = ({ 
+interface AdminDashboardProps {
+  onLogout: () => void;
+  services: ServiceItem[];
+  onSaveService: (srv: ServiceItem) => Promise<void>;
+  onDeleteService: (id: string) => Promise<void>;
+  customers: CustomerItem[];
+  onSaveCustomer: (cust: CustomerItem) => Promise<void>;
+  onDeleteCustomer: (id: string) => Promise<void>;
+  customHeroBg: string;
+  setCustomHeroBg: (val: string) => void;
+  customCardBg: string;
+  setCustomCardBg: (val: string) => void;
+  onSaveSettings: (heroBg: string, cardBg: string) => Promise<void>;
+  isCloudSynced: boolean;
+}
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
   onLogout, services, onSaveService, onDeleteService,
   customers, onSaveCustomer, onDeleteCustomer,
   customHeroBg, setCustomHeroBg, customCardBg, setCustomCardBg,
@@ -1440,14 +1542,14 @@ const AdminDashboard = ({
 }) => {
   const [activeTab, setActiveTab] = useState('invitations');
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState(null);
+  const [editingService, setEditingService] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '', category: 'Cabello', price: '', duration: '', image: '', description: ''
   });
 
   const safeServices = Array.isArray(services) ? services : [];
 
-  const handleOpenForm = (service = null) => {
+  const handleOpenForm = (service: ServiceItem | null = null) => {
     if (service) {
       setEditingService(service.id);
       setFormData({
@@ -1469,7 +1571,7 @@ const AdminDashboard = ({
     setIsServiceModalOpen(true);
   };
 
-  const handleSaveServiceSubmit = async (e) => {
+  const handleSaveServiceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const id = editingService || `s${Date.now()}`;
     await onSaveService({ ...formData, id });
@@ -1542,7 +1644,7 @@ const AdminDashboard = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {safeServices.map(service => (
+                  {safeServices.map((service) => (
                     <tr key={service.id} className="hover:bg-gray-50">
                       <td className="p-4 flex items-center gap-3">
                         <img src={service.image} alt={service.name} className="w-12 h-12 rounded-lg object-cover"/>
@@ -1605,7 +1707,7 @@ const AdminDashboard = ({
             </div>
             <div>
               <label className="block text-xs font-bold uppercase mb-1">Descripción</label>
-              <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows="2" className="w-full border rounded-xl p-2.5 outline-none"></textarea>
+              <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={2} className="w-full border rounded-xl p-2.5 outline-none"></textarea>
             </div>
             <div className="pt-3 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setIsServiceModalOpen(false)}>Cancelar</Button>
@@ -1621,15 +1723,14 @@ const AdminDashboard = ({
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState('home');
   const [isAdminAuth, setIsAdminAuth] = useState(false);
-  const [services, setServices] = useState(initialMockServices);
-  const [customers, setCustomers] = useState(mockInactiveCustomers);
-  const [selectedServiceFromHome, setSelectedServiceFromHome] = useState(null);
+  const [services, setServices] = useState<ServiceItem[]>(initialMockServices);
+  const [customers, setCustomers] = useState<CustomerItem[]>(mockInactiveCustomers);
+  const [selectedServiceFromHome, setSelectedServiceFromHome] = useState<ServiceItem | null>(null);
   const [customHeroBg, setCustomHeroBg] = useState(DEFAULT_HERO_BG);
   const [customCardBg, setCustomCardBg] = useState(DEFAULT_CARD_BG);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
 
-  // 1. Autenticación inicial con Firebase
   useEffect(() => {
     if (!auth) return;
     const initAuth = async () => {
@@ -1650,7 +1751,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Escucha en tiempo real de Servicios, Clientas y Fondos en Firestore
   useEffect(() => {
     if (!user || !db) return;
 
@@ -1664,7 +1764,7 @@ export default function App() {
             setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'services', srv.id), srv);
           });
         } else {
-          const loadedServices = snapshot.docs.map(d => d.data());
+          const loadedServices = snapshot.docs.map(d => d.data() as ServiceItem);
           setServices(loadedServices);
         }
       },
@@ -1680,7 +1780,7 @@ export default function App() {
             setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', cust.id), cust);
           });
         } else {
-          const loadedCustomers = snapshot.docs.map(d => d.data());
+          const loadedCustomers = snapshot.docs.map(d => d.data() as CustomerItem);
           setCustomers(loadedCustomers);
         }
       },
@@ -1709,7 +1809,7 @@ export default function App() {
     };
   }, [user]);
 
-  const handleSaveCustomer = async (customerObj) => {
+  const handleSaveCustomer = async (customerObj: CustomerItem) => {
     setCustomers(prev => {
       const exists = prev.some(c => c.id === customerObj.id);
       return exists ? prev.map(c => c.id === customerObj.id ? customerObj : c) : [...prev, customerObj];
@@ -1723,7 +1823,7 @@ export default function App() {
     }
   };
 
-  const handleDeleteCustomer = async (customerId) => {
+  const handleDeleteCustomer = async (customerId: string) => {
     setCustomers(prev => prev.filter(c => c.id !== customerId));
     if (user && db) {
       try {
@@ -1734,7 +1834,7 @@ export default function App() {
     }
   };
 
-  const handleSaveService = async (serviceObj) => {
+  const handleSaveService = async (serviceObj: ServiceItem) => {
     setServices(prev => {
       const exists = prev.some(s => s.id === serviceObj.id);
       return exists ? prev.map(s => s.id === serviceObj.id ? serviceObj : s) : [...prev, serviceObj];
@@ -1748,7 +1848,7 @@ export default function App() {
     }
   };
 
-  const handleDeleteService = async (serviceId) => {
+  const handleDeleteService = async (serviceId: string) => {
     setServices(prev => prev.filter(s => s.id !== serviceId));
     if (user && db) {
       try {
@@ -1759,7 +1859,7 @@ export default function App() {
     }
   };
 
-  const handleSaveSettings = async (newHeroBg, newCardBg) => {
+  const handleSaveSettings = async (newHeroBg: string, newCardBg: string) => {
     if (user && db) {
       try {
         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'theme'), {
@@ -1772,7 +1872,7 @@ export default function App() {
     }
   };
 
-  const handleSelectServiceFromHome = (service) => {
+  const handleSelectServiceFromHome = (service: ServiceItem) => {
     setSelectedServiceFromHome(service);
     setCurrentRoute('catalog');
   };
@@ -1826,7 +1926,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Botón Flotante de WhatsApp siempre visible */}
       <a 
         href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika%20%F0%9F%8C%B7%20Deseo%20agendar%20una%20cita" 
         target="_blank" 
