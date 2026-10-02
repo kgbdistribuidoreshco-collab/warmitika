@@ -81,7 +81,7 @@ const appId = typeof __app_id !== 'undefined'
 const DEFAULT_HERO_BG = "https://i.imgur.com/mD1A455.png";
 const DEFAULT_CARD_BG = "https://i.imgur.com/mD1A455.png";
 
-// Calcula automáticamente los días transcurridos si tiene fecha DD/MM/YYYY o YYYY-MM-DD, o usa el campo days
+// Calcula automáticamente los días transcurridos si tiene fecha DD/MM/YYYY o usa el campo days
 const getEffectiveDays = (cust: CustomerItem | undefined): number => {
   if (!cust) return 30;
   const manualDays = Number(cust.days);
@@ -262,7 +262,19 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
 
   const bgImg = await loadImage(bgUrl || DEFAULT_CARD_BG);
   if (bgImg) {
-    ctx.drawImage(bgImg, 0, 0, 1080, 1080);
+    // Recorte proporcional inteligente (Object-Cover) para NO aplastar ni deformar imágenes horizontales
+    const imgRatio = bgImg.width / bgImg.height;
+    const canvasRatio = 1; // 1080x1080 es 1:1
+    let sx = 0, sy = 0, sWidth = bgImg.width, sHeight = bgImg.height;
+
+    if (imgRatio > canvasRatio) {
+      sWidth = bgImg.height * canvasRatio;
+      sx = (bgImg.width - sWidth) / 2;
+    } else if (imgRatio < canvasRatio) {
+      sHeight = bgImg.width / canvasRatio;
+      sy = (bgImg.height - sHeight) / 2;
+    }
+    ctx.drawImage(bgImg, sx, sy, sWidth, sHeight, 0, 0, 1080, 1080);
   } else {
     ctx.fillStyle = 'rgba(184, 117, 131, 0.18)';
     ctx.beginPath(); ctx.arc(120, 120, 220, 0, Math.PI * 2); ctx.fill();
@@ -971,7 +983,6 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
 
   const getParsedText = () => buildMessageForCustomer(selectedCustomer, selectedTemplate);
 
-  // Elige una plantilla aleatoria diferente a la actual para que siempre cambie de verdad
   const pickAnotherRandomTemplate = (currentId?: string): TemplateItem => {
     const pool = ANTI_SPAM_TEMPLATES.filter(t => t.id !== (currentId || selectedTemplate?.id));
     const randomIndex = Math.floor(Math.random() * pool.length);
@@ -1025,13 +1036,11 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
     setIsGeneratingImg(false);
   };
 
-  // ENVÍO GARANTIZADO DE MENSAJE RANDOM + DESCUENTO + FOTO
   const handleSendWhatsAppWithImage = async (custOverride: CustomerItem | null = null, rotateRandom = true) => {
     const target = custOverride || selectedCustomer;
     if (!target) return;
     setSelectedCustomerId(target.id);
 
-    // Siempre rotamos a un mensaje random cálido si rotateRandom está activo
     const chosenTemplate = rotateRandom
       ? pickAnotherRandomTemplate(selectedTemplate?.id)
       : selectedTemplate;
@@ -1043,8 +1052,6 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
     const fullPhone = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
     const directWaUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(messageText)}`;
 
-    // Abrimos inmediatamente la ventana de WhatsApp con el TEXTO + DESCUENTO precargado en la barra de chat
-    // para que ningún navegador bloquee la ventana ni borre el mensaje de descuento.
     window.open(directWaUrl, '_blank', 'noopener,noreferrer');
 
     setIsGeneratingImg(true);
@@ -1059,7 +1066,6 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
       });
 
       if (blob) {
-        // 1. Descargamos automáticamente la tarjeta PNG con el nombre y descuento de la clienta
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -1069,7 +1075,6 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        // 2. Copiamos la imagen al portapapeles para pegar con Ctrl+V directo en WhatsApp
         let copiedImg = false;
         if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
           try {
@@ -1365,7 +1370,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
 
           <div>
             <label className="block text-xs font-bold uppercase text-gray-600 mb-1.5 flex items-center gap-1">
-              <Camera size={15}/> Fondo Floral de esta Tarjeta (URL IA)
+              <Camera size={15}/> Fondo Floral Cuadrado (1:1) de esta Tarjeta (URL IA)
             </label>
             <input 
               type="text" 
@@ -1374,12 +1379,12 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
                 setCustomCardBg(e.target.value);
                 onSaveSettings(customHeroBg, e.target.value);
               }} 
+              placeholder="Pega aquí la URL de tu imagen cuadrada 1:1 para la tarjeta..."
               className="w-full border border-gray-300 rounded-lg p-2 text-xs outline-none" 
             />
           </div>
 
           <div className="pt-2 space-y-2.5">
-            {/* Botón Principal: Mantiene el mensaje que estás viendo en pantalla + descarga/copia la foto */}
             <Button 
               variant="whatsapp" 
               disabled={isGeneratingImg}
@@ -1392,7 +1397,6 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
                 : `Enviar este Mensaje + Foto + Descuento a ${customerFirstName}`}
             </Button>
 
-            {/* Botón Secundario: Rota primero un mensaje random nuevo y luego abre WhatsApp + Foto */}
             <Button 
               variant="primary" 
               disabled={isGeneratingImg}
@@ -1456,7 +1460,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
           <div className="bg-white p-6 rounded-2xl flex flex-col items-center justify-center border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between w-full mb-3">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                Arte Exportable Warmi T&apos;ika (1080 × 1080 HD)
+                Arte Exportable Warmi T&apos;ika (1080 × 1080 HD • Sin deformación)
               </span>
               <button
                 type="button"
@@ -1498,10 +1502,10 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
 
       <div className="bg-[#FFF8F5] p-6 rounded-2xl border border-[#C38296]/40 shadow-sm">
         <h3 className="font-serif text-xl text-[#70415D] mb-2 flex items-center gap-2">
-          <Flower2 size={20} className="text-[#B87583]" /> Fondo Floral de la Página Web — Warmi T&apos;ika (IA)
+          <Flower2 size={20} className="text-[#B87583]" /> Fondo Floral Horizontal (16:9) de la Página Web — Warmi T&apos;ika
         </h3>
         <p className="text-xs text-gray-600 mb-4">
-          Cambia cuando quieras el enlace del fondo principal de la web. Se guardará automáticamente en Firebase:
+          Este es el fondo horizontal de la portada principal de la web (independiente del fondo cuadrado de la tarjeta de descuento):
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <input 
@@ -1511,7 +1515,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
               setCustomHeroBg(e.target.value);
               onSaveSettings(e.target.value, customCardBg);
             }}
-            placeholder="Pega aquí la URL de tu fondo floral para la web..."
+            placeholder="Pega aquí la URL de tu fondo floral horizontal para la web..."
             className="flex-1 border border-[#C38296] bg-white rounded-xl p-2.5 text-sm outline-none"
           />
           <Button 
@@ -1812,6 +1816,11 @@ export default function App() {
   const [customCardBg, setCustomCardBg] = useState(DEFAULT_CARD_BG);
   const [user, setUser] = useState<User | null>(null);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
+
+  // Asegura que la pestaña del navegador siempre diga Warmi T'ika y nunca "Create Next App"
+  useEffect(() => {
+    document.title = "Warmi T'ika | Beauty Studio & Spa Floral";
+  }, [currentRoute]);
 
   useEffect(() => {
     if (!auth) return;
