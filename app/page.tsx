@@ -5,7 +5,7 @@ import {
   X, Check, MapPin, Sparkles, MessageCircle, 
   Users, Settings, LogOut, Camera, Lock, 
   Edit, Trash2, Plus, AlertCircle, Flower2,
-  ArrowUpDown, Copy, RefreshCw
+  ArrowUpDown, Copy, RefreshCw, UserCheck
 } from 'lucide-react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
@@ -32,6 +32,13 @@ export interface CustomerItem {
   lastVisit: string;
   service: string;
   days: number;
+}
+
+export interface StaffItem {
+  id: string;
+  name: string;
+  specialty: string;
+  roles: string[];
 }
 
 export interface TemplateItem {
@@ -81,6 +88,8 @@ const appId = typeof __app_id !== 'undefined'
 const DEFAULT_HERO_BG = "https://i.imgur.com/mD1A455.png";
 const DEFAULT_CARD_BG = "https://i.imgur.com/mD1A455.png";
 
+const SERVICE_CATEGORIES = ['Cabello', 'Uñas', 'Cejas', 'Pestañas', 'Labios'];
+
 // Calcula automáticamente los días transcurridos si tiene fecha DD/MM/YYYY o usa el campo days
 const getEffectiveDays = (cust: CustomerItem | undefined): number => {
   if (!cust) return 30;
@@ -108,7 +117,7 @@ const Logo: React.FC<LogoProps> = ({ className = "h-12", color = "default" }) =>
   <div className={`flex items-center justify-start ${className}`}>
     <img 
       src="https://i.imgur.com/hiJkL1K.png" 
-      alt="Warmi T'ika Beauty Studio" 
+      alt="Warmi T'ika | Beauty Studio" 
       className={`max-h-full w-auto object-contain transition-all duration-300 ${
         color === 'white' ? 'brightness-0 invert opacity-100 drop-shadow-md' : 'drop-shadow-sm'
       }`}
@@ -195,9 +204,9 @@ const initialMockServices: ServiceItem[] = [
   { id: 's7', category: 'Labios', name: 'Hidratación de Rosas y Ácido Hialurónico', price: 'S/ 40', duration: '30 min', image: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&q=80&w=600', description: 'Velo nutritivo y regenerador para devolver la suavidad y frescura a los labios.' }
 ];
 
-const mockStaff = [
-  { id: 'st1', name: 'Elena (Especialista en Cabello)', roles: ['Cabello'] },
-  { id: 'st2', name: 'Sofía (Especialista en Uñas y Mirada)', roles: ['Uñas', 'Cejas', 'Pestañas'] }
+const initialMockStaff: StaffItem[] = [
+  { id: 'st1', name: 'Elena', specialty: 'Especialista en Cabello y Alisados', roles: ['Cabello'] },
+  { id: 'st2', name: 'Sofía', specialty: 'Especialista en Uñas y Mirada', roles: ['Uñas', 'Cejas', 'Pestañas', 'Labios'] }
 ];
 
 const mockInactiveCustomers: CustomerItem[] = [
@@ -207,26 +216,26 @@ const mockInactiveCustomers: CustomerItem[] = [
 ];
 
 const ANTI_SPAM_TEMPLATES: TemplateItem[] = [
-  { id: 't1', name: '1. Cariño y días exactos', content: "Hola {{nombre}} 🌷 ¡Qué lindo saludarte! Vimos que ya pasaron {{dias}} días desde tu visita para {{servicio}} en Warmi T'ika Beauty Studio. Te extrañamos y preparamos {{beneficio}} con tu código {{codigo}} (válido hasta el {{fecha_vencimiento}}). ¡Te adjunto tu tarjeta VIP!" },
-  { id: 't2', name: '2. Momento de engreírte', content: "¡Hola, {{nombre}}! 🌸 Hace {{dias}} días tuvimos el gusto de atenderte en Warmi T'ika Beauty Studio para tu {{servicio}}. Sabemos que siempre viene bien una pausa para ti, así que tienes {{beneficio}} usando el código {{codigo}} hasta el {{fecha_vencimiento}}." },
-  { id: 't3', name: '3. Retoque de tu servicio favorito', content: "Hola {{nombre}} ✨ ¿Cómo has estado? Notamos que hace {{dias}} días te realizaste {{servicio}} con nosotras. Para que vuelvas a lucir radiante en Warmi T'ika Beauty Studio, te regalamos {{beneficio}} con el código {{codigo}}." },
-  { id: 't4', name: '4. Invitación especial de temporada', content: "Querida {{nombre}} 🌺 Pasaron {{dias}} días desde la última vez que nos visitaste en Warmi T'ika Beauty Studio para tu {{servicio}}. Queremos volver a consentirte como mereces con {{beneficio}} especial para ti (Código: {{codigo}})." },
-  { id: 't5', name: '5. Pausa de belleza en el estudio', content: "Hola {{nombre}} 🌷 En Warmi T'ika Beauty Studio nos encantará volver a recibirte después de estos {{dias}} días sin verte. Te dejamos aquí tu tarjeta con {{beneficio}} (código {{codigo}}) para que agendes tu próximo momento de cuidado." },
+  { id: 't1', name: '1. Cariño y días exactos', content: "Hola {{nombre}} 🌷 ¡Qué lindo saludarte! Vimos que ya pasaron {{dias}} días desde tu visita para {{servicio}} en Warmi T'ika | Beauty Studio. Te extrañamos y preparamos {{beneficio}} con tu código {{codigo}} (válido hasta el {{fecha_vencimiento}}). ¡Te adjunto tu tarjeta VIP!" },
+  { id: 't2', name: '2. Momento de engreírte', content: "¡Hola, {{nombre}}! 🌸 Hace {{dias}} días tuvimos el gusto de atenderte en Warmi T'ika | Beauty Studio para tu {{servicio}}. Sabemos que siempre viene bien una pausa para ti, así que tienes {{beneficio}} usando el código {{codigo}} hasta el {{fecha_vencimiento}}." },
+  { id: 't3', name: '3. Retoque de tu servicio favorito', content: "Hola {{nombre}} ✨ ¿Cómo has estado? Notamos que hace {{dias}} días te realizaste {{servicio}} con nosotras. Para que vuelvas a lucir radiante en Warmi T'ika | Beauty Studio, te regalamos {{beneficio}} con el código {{codigo}}." },
+  { id: 't4', name: '4. Invitación especial de temporada', content: "Querida {{nombre}} 🌺 Pasaron {{dias}} días desde la última vez que nos visitaste en Warmi T'ika | Beauty Studio para tu {{servicio}}. Queremos volver a consentirte como mereces con {{beneficio}} especial para ti (Código: {{codigo}})." },
+  { id: 't5', name: '5. Pausa de belleza en el estudio', content: "Hola {{nombre}} 🌷 En Warmi T'ika | Beauty Studio nos encantará volver a recibirte después de estos {{dias}} días sin verte. Te dejamos aquí tu tarjeta con {{beneficio}} (código {{codigo}}) para que agendes tu próximo momento de cuidado." },
   { id: 't6', name: '6. Saludo cálido y beneficio VIP', content: "¡Hola {{nombre}}! 🌸 Qué alegría escribirte. Ya son {{dias}} días sin verte por el estudio luego de tu {{servicio}}. Tenemos listo para ti {{beneficio}} con el código {{codigo}} hasta el {{fecha_vencimiento}}." },
-  { id: 't7', name: '7. Tu espacio favorito te espera', content: "Hola, {{nombre}} 💐 Tu rincón favorito en Warmi T'ika Beauty Studio te espera. Como han pasado {{dias}} días desde tu última cita de {{servicio}}, queremos obsequiarte {{beneficio}} presentando esta tarjetita con el código {{codigo}}." },
-  { id: 't8', name: '8. Renueva tu estilo con nosotras', content: "¡Buen día, {{nombre}}! 🌷 Hace {{dias}} días compartimos tu sesión de {{servicio}}. Cuando quieras renovar tu look o relajarte, cuentas con {{beneficio}} exclusivo en Warmi T'ika Beauty Studio (código: {{codigo}})." },
-  { id: 't9', name: '9. Detalle exclusivo por fidelidad', content: "Hola {{nombre}} ✨ Gracias por confiar en Warmi T'ika Beauty Studio hace {{dias}} días para tu {{servicio}}. Como detalle especial para tu regreso, activamos {{beneficio}} a tu nombre con el código {{codigo}}." },
+  { id: 't7', name: '7. Tu espacio favorito te espera', content: "Hola, {{nombre}} 💐 Tu rincón favorito en Warmi T'ika | Beauty Studio te espera. Como han pasado {{dias}} días desde tu última cita de {{servicio}}, queremos obsequiarte {{beneficio}} presentando esta tarjetita con el código {{codigo}}." },
+  { id: 't8', name: '8. Renueva tu estilo con nosotras', content: "¡Buen día, {{nombre}}! 🌷 Hace {{dias}} días compartimos tu sesión de {{servicio}}. Cuando quieras renovar tu look o relajarte, cuentas con {{beneficio}} exclusivo en Warmi T'ika | Beauty Studio (código: {{codigo}})." },
+  { id: 't9', name: '9. Detalle exclusivo por fidelidad', content: "Hola {{nombre}} ✨ Gracias por confiar en Warmi T'ika | Beauty Studio hace {{dias}} días para tu {{servicio}}. Como detalle especial para tu regreso, activamos {{beneficio}} a tu nombre con el código {{codigo}}." },
   { id: 't10', name: '10. Recordatorio amable de cuidado', content: "Hola, {{nombre}} 🌸 ¡Esperamos que estés súper bien! Ya cumplimos {{dias}} días desde tu último {{servicio}}. Te enviamos esta invitación con {{beneficio}} (código {{codigo}}) para cuando gustes visitarnos." },
-  { id: 't11', name: '11. Experiencia Beauty Studio', content: "¡Hola {{nombre}}! 🌷 Hace {{dias}} días que no coincidimos en Warmi T'ika Beauty Studio. Te esperamos con la mejor atención y {{beneficio}} especial para ti usando el código {{codigo}} antes del {{fecha_vencimiento}}." },
+  { id: 't11', name: '11. Experiencia Beauty Studio', content: "¡Hola {{nombre}}! 🌷 Hace {{dias}} días que no coincidimos en Warmi T'ika | Beauty Studio. Te esperamos con la mejor atención y {{beneficio}} especial para ti usando el código {{codigo}} antes del {{fecha_vencimiento}}." },
   { id: 't12', name: '12. Regalo personalizado Warmi T\'ika', content: "Querida {{nombre}} 🌺 Preparamos esta tarjeta personalizada porque hace {{dias}} días no te vemos por el estudio desde tu {{servicio}}. Disfruta de {{beneficio}} en tu próxima reserva con el código {{codigo}}." },
-  { id: 't13', name: '13. Brillo y renovación', content: "Hola {{nombre}} ✨ ¿Lista para engreírte hoy? Pasaron {{dias}} días desde tu {{servicio}} en Warmi T'ika Beauty Studio y queremos consentirte con {{beneficio}} (Código: {{codigo}})." },
-  { id: 't14', name: '14. Invitación dulce sin presiones', content: "Hola, {{nombre}} 🌸 Te saludamos con mucho cariño desde Warmi T'ika Beauty Studio. Vimos que hace {{dias}} días nos visitaste para {{servicio}} y te dejamos {{beneficio}} con el código {{codigo}} para cuando te provoque regresar." },
-  { id: 't15', name: '15. Cuidado para ti', content: "¡Hola {{nombre}}! 🌷 Mereces un momento solo para ti. Después de {{dias}} días de tu última visita, en Warmi T'ika Beauty Studio te regalamos {{beneficio}} con tu código personal {{codigo}}." },
-  { id: 't16', name: '16. Especialista lista para atenderte', content: "Hola {{nombre}} 💐 Nuestro equipo de Warmi T'ika Beauty Studio te recuerda con mucho cariño tras {{dias}} días de tu {{servicio}}. Usa esta tarjeta con {{beneficio}} (código {{codigo}}) en tu próxima cita." },
-  { id: 't17', name: '17. Tardes de belleza en el estudio', content: "¡Hola, {{nombre}}! 🌸 Ya van {{dias}} días desde que estuviste en Warmi T'ika Beauty Studio. Si deseas agendar esta semana, tienes activo {{beneficio}} con el código {{codigo}} hasta el {{fecha_vencimiento}}." },
-  { id: 't18', name: '18. Mimo garantizado', content: "Hola {{nombre}} 🌷 Queremos que vuelvas a vivir la experiencia Warmi T'ika Beauty Studio. Como pasaron {{dias}} días desde tu última atención de {{servicio}}, tienes {{beneficio}} listo con el código {{codigo}}." },
-  { id: 't19', name: '19. Tu tarjeta de descuento personal', content: "¡Hola {{nombre}}! ✨ Te adjuntamos tu pase especial de Warmi T'ika Beauty Studio. Hace {{dias}} días realizamos tu {{servicio}} y hoy tienes {{beneficio}} exclusivo con el código {{codigo}}." },
-  { id: 't20', name: '20. Mensaje corto y directo anti-spam', content: "Hola {{nombre}} 🌸 ¡Te esperamos en Warmi T'ika Beauty Studio! Ya pasaron {{dias}} días desde tu visita de {{servicio}} y tienes {{beneficio}} disponible con el código {{codigo}} (vence el {{fecha_vencimiento}})." }
+  { id: 't13', name: '13. Brillo y renovación', content: "Hola {{nombre}} ✨ ¿Lista para engreírte hoy? Pasaron {{dias}} días desde tu {{servicio}} en Warmi T'ika | Beauty Studio y queremos consentirte con {{beneficio}} (Código: {{codigo}})." },
+  { id: 't14', name: '14. Invitación dulce sin presiones', content: "Hola, {{nombre}} 🌸 Te saludamos con mucho cariño desde Warmi T'ika | Beauty Studio. Vimos que hace {{dias}} días nos visitaste para {{servicio}} y te dejamos {{beneficio}} con el código {{codigo}} para cuando te provoque regresar." },
+  { id: 't15', name: '15. Cuidado para ti', content: "¡Hola {{nombre}}! 🌷 Mereces un momento solo para ti. Después de {{dias}} días de tu última visita, en Warmi T'ika | Beauty Studio te regalamos {{beneficio}} con tu código personal {{codigo}}." },
+  { id: 't16', name: '16. Especialista lista para atenderte', content: "Hola {{nombre}} 💐 Nuestro equipo de Warmi T'ika | Beauty Studio te recuerda con mucho cariño tras {{dias}} días de tu {{servicio}}. Usa esta tarjeta con {{beneficio}} (código {{codigo}}) en tu próxima cita." },
+  { id: 't17', name: '17. Tardes de belleza en el estudio', content: "¡Hola, {{nombre}}! 🌸 Ya van {{dias}} días desde que estuviste en Warmi T'ika | Beauty Studio. Si deseas agendar esta semana, tienes activo {{beneficio}} con el código {{codigo}} hasta el {{fecha_vencimiento}}." },
+  { id: 't18', name: '18. Mimo garantizado', content: "Hola {{nombre}} 🌷 Queremos que vuelvas a vivir la experiencia Warmi T'ika | Beauty Studio. Como pasaron {{dias}} días desde tu última atención de {{servicio}}, tienes {{beneficio}} listo con el código {{codigo}}." },
+  { id: 't19', name: '19. Tu tarjeta de descuento personal', content: "¡Hola {{nombre}}! ✨ Te adjuntamos tu pase especial de Warmi T'ika | Beauty Studio. Hace {{dias}} días realizamos tu {{servicio}} y hoy tienes {{beneficio}} exclusivo con el código {{codigo}}." },
+  { id: 't20', name: '20. Mensaje corto y directo anti-spam', content: "Hola {{nombre}} 🌸 ¡Te esperamos en Warmi T'ika | Beauty Studio! Ya pasaron {{dias}} días desde tu visita de {{servicio}} y tienes {{beneficio}} disponible con el código {{codigo}} (vence el {{fecha_vencimiento}})." }
 ];
 
 interface CardBlobParams {
@@ -262,9 +271,8 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
 
   const bgImg = await loadImage(bgUrl || DEFAULT_CARD_BG);
   if (bgImg) {
-    // Recorte proporcional inteligente (Object-Cover) para NO aplastar ni deformar imágenes horizontales
     const imgRatio = bgImg.width / bgImg.height;
-    const canvasRatio = 1; // 1080x1080 es 1:1
+    const canvasRatio = 1;
     let sx = 0, sy = 0, sWidth = bgImg.width, sHeight = bgImg.height;
 
     if (imgRatio > canvasRatio) {
@@ -356,7 +364,7 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
 
   ctx.fillStyle = '#879681';
   ctx.font = '20px sans-serif';
-  ctx.fillText("Warmi T'ika Beauty Studio • Presenta esta tarjeta por WhatsApp • Válido hasta el 30/10/2026", 540, 925);
+  ctx.fillText("Warmi T'ika | Beauty Studio • Presenta esta tarjeta por WhatsApp • Válido hasta el 30/10/2026", 540, 925);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
@@ -431,7 +439,7 @@ const HomeView: React.FC<HomeViewProps> = ({ navigate, services, customHeroBg, o
         
         <div className="max-w-3xl mx-auto text-center relative z-10 bg-[#FFF8F5]/80 backdrop-blur-md p-8 md:p-12 rounded-3xl border-2 border-[#B87583]/40 shadow-2xl">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-[#B87583]/40 text-[#70415D] text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
-            <Flower2 size={15} className="text-[#B87583]" /> Warmi T&apos;ika • Beauty Studio <Flower2 size={15} className="text-[#879681]" />
+            <Flower2 size={15} className="text-[#B87583]" /> Warmi T&apos;ika | Beauty Studio <Flower2 size={15} className="text-[#879681]" />
           </div>
 
           <div className="flex justify-center mb-6">
@@ -444,7 +452,7 @@ const HomeView: React.FC<HomeViewProps> = ({ navigate, services, customHeroBg, o
           </h1>
 
           <p className="text-base md:text-lg text-[#342A30]/90 mb-10 max-w-xl mx-auto leading-relaxed font-medium">
-            Sumérgete en un ambiente exclusivo de cuidado y calma. En <strong>Warmi T&apos;ika Beauty Studio</strong> cuidamos cada detalle para realzar tu belleza natural.
+            Sumérgete en un ambiente exclusivo de cuidado y calma. En <strong>Warmi T&apos;ika | Beauty Studio</strong> cuidamos cada detalle para realzar tu belleza natural.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -538,7 +546,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({ navigate, services, initialSe
     }
   }, [initialSelectedService]);
 
-  const categories = ['Todos', 'Cabello', 'Uñas', 'Cejas', 'Pestañas', 'Labios'];
+  const categories = ['Todos', ...SERVICE_CATEGORIES];
   const safeServices = Array.isArray(services) ? services : [];
 
   const filteredServices = activeCategory === 'Todos'
@@ -654,7 +662,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({ navigate, services, initialSe
                   Reservar este servicio
                 </Button>
                 <a 
-                  href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika Beauty Studio, deseo consultar por el servicio: ${selectedService.name}`)}`}
+                  href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika | Beauty Studio, deseo consultar por el servicio: ${selectedService.name}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -674,17 +682,30 @@ const CatalogView: React.FC<CatalogViewProps> = ({ navigate, services, initialSe
 interface BookingFlowProps {
   navigate: (route: string) => void;
   services: ServiceItem[];
+  staffList: StaffItem[];
 }
 
-const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
+const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList }) => {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<string>('Cualquier profesional disponible');
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState('10:00');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
   const safeServices = Array.isArray(services) ? services : [];
+  const safeStaff = Array.isArray(staffList) ? staffList : [];
+
+  // Filtra las profesionales que atienden la categoría del servicio elegido (o muestra todas si no hay filtro específico)
+  const matchingStaff = useMemo(() => {
+    if (!selectedService) return safeStaff;
+    const filtered = safeStaff.filter(
+      (st) => Array.isArray(st.roles) && st.roles.includes(selectedService.category)
+    );
+    return filtered.length > 0 ? filtered : safeStaff;
+  }, [safeStaff, selectedService]);
 
   if (showSuccess) {
     return (
@@ -695,11 +716,11 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
           </div>
           <h2 className="text-3xl font-serif text-[#70415D] mb-3">¡Solicitud Registrada!</h2>
           <p className="text-gray-600 text-sm mb-6">
-            Gracias, <strong>{customerName || 'Hermosa'}</strong>. Hemos reservado tu espacio en <strong>Warmi T&apos;ika Beauty Studio</strong> para <strong>{selectedService?.name}</strong>.
+            Gracias, <strong>{customerName || 'Hermosa'}</strong>. Hemos reservado tu espacio en <strong>Warmi T&apos;ika | Beauty Studio</strong> para <strong>{selectedService?.name}</strong> con <strong>{selectedStaff}</strong>.
           </p>
           <div className="flex flex-col gap-3">
             <a
-              href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika Beauty Studio 🌸 Soy ${customerName || 'clienta'}, acabo de reservar ${selectedService?.name || 'mi cita'} a las ${selectedTime}.`)}`}
+              href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika | Beauty Studio 🌸 Soy ${customerName || 'clienta'}, acabo de reservar ${selectedService?.name || 'mi cita'} con ${selectedStaff}${selectedDate ? ` para el ${selectedDate}` : ''} a las ${selectedTime}.`)}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -735,12 +756,15 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
 
         {step === 1 && (
           <div>
-            <h2 className="text-2xl font-serif text-[#70415D] mb-6">1. Elige tu experiencia en Warmi T&apos;ika Beauty Studio</h2>
+            <h2 className="text-2xl font-serif text-[#70415D] mb-6">1. Elige tu experiencia en Warmi T&apos;ika | Beauty Studio</h2>
             <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
               {safeServices.map((service) => (
                 <div 
                   key={service.id} 
-                  onClick={() => setSelectedService(service)}
+                  onClick={() => {
+                    setSelectedService(service);
+                    setSelectedStaff('Cualquier profesional disponible');
+                  }}
                   className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-4 ${
                     selectedService?.id === service.id 
                       ? 'border-[#B87583] bg-[#FFF8F5] shadow-sm' 
@@ -749,7 +773,10 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
                 >
                   <img src={service.image} className="w-16 h-16 rounded-xl object-cover" alt={service.name} />
                   <div className="flex-1">
-                    <h4 className="font-bold text-[#342A30]">{service.name}</h4>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#B87583] bg-[#FFF8F5] px-2 py-0.5 rounded-full border border-[#C38296]/30">
+                      {service.category}
+                    </span>
+                    <h4 className="font-bold text-[#342A30] mt-0.5">{service.name}</h4>
                     <p className="text-xs text-[#879681] font-medium flex items-center mt-1">
                       <Clock size={12} className="mr-1"/> {service.duration}
                     </p>
@@ -771,15 +798,33 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
             <h2 className="text-2xl font-serif text-[#70415D] mb-6">2. Fecha, Hora y Especialista</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold text-[#342A30] mb-2">Especialista</label>
-                <select className="w-full border border-[#C38296]/50 rounded-xl p-3 bg-[#FFF8F5]/50 outline-none">
-                  <option>Cualquier profesional disponible</option>
-                  {mockStaff.map(s => <option key={s.id}>{s.name}</option>)}
+                <label className="block text-sm font-bold text-[#342A30] mb-2">
+                  Especialista {selectedService ? `(${selectedService.category})` : ''}
+                </label>
+                <select 
+                  value={selectedStaff}
+                  onChange={(e) => setSelectedStaff(e.target.value)}
+                  className="w-full border border-[#C38296]/50 rounded-xl p-3 bg-[#FFF8F5]/50 outline-none font-medium text-sm"
+                >
+                  <option value="Cualquier profesional disponible">✨ Cualquier profesional disponible</option>
+                  {matchingStaff.map(s => (
+                    <option key={s.id} value={`${s.name} (${s.specialty})`}>
+                      👩‍‍🎨 {s.name} — {s.specialty}
+                    </option>
+                  ))}
                 </select>
+                <p className="text-[11px] text-gray-500 mt-1.5">
+                  Puedes elegir a tu especialista favorita o dejar que te asignemos una disponible.
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-bold text-[#342A30] mb-2">Fecha deseada</label>
-                <input type="date" className="w-full border border-[#C38296]/50 rounded-xl p-3 bg-[#FFF8F5]/50 outline-none" />
+                <input 
+                  type="date" 
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full border border-[#C38296]/50 rounded-xl p-3 bg-[#FFF8F5]/50 outline-none text-sm" 
+                />
               </div>
             </div>
             <div className="mt-6">
@@ -842,12 +887,14 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
 
         {step === 4 && (
           <div className="text-center">
-            <h2 className="text-2xl font-serif text-[#70415D] mb-2">Confirmar tu Reserva en Warmi T&apos;ika Beauty Studio</h2>
+            <h2 className="text-2xl font-serif text-[#70415D] mb-2">Confirmar tu Reserva en Warmi T&apos;ika | Beauty Studio</h2>
             <p className="text-gray-500 text-sm mb-6">Verifica que los datos estén correctos.</p>
-            <div className="bg-[#FFF8F5] p-6 rounded-2xl text-left max-w-md mx-auto mb-8 border border-[#C38296]/40">
-              <p className="mb-2 text-sm"><strong>Servicio:</strong> {selectedService?.name || 'Tratamiento'}</p>
-              <p className="mb-2 text-sm"><strong>Horario:</strong> {selectedTime} hrs</p>
-              <p className="mb-2 text-sm"><strong>Clienta:</strong> {customerName || 'Invitada'}</p>
+            <div className="bg-[#FFF8F5] p-6 rounded-2xl text-left max-w-md mx-auto mb-8 border border-[#C38296]/40 space-y-2">
+              <p className="text-sm"><strong>Servicio:</strong> {selectedService?.name || 'Tratamiento'}</p>
+              <p className="text-sm"><strong>Especialista:</strong> {selectedStaff}</p>
+              {selectedDate && <p className="text-sm"><strong>Fecha:</strong> {selectedDate}</p>}
+              <p className="text-sm"><strong>Horario:</strong> {selectedTime} hrs</p>
+              <p className="text-sm"><strong>Clienta:</strong> {customerName || 'Invitada'}</p>
               <div className="mt-4 pt-3 border-t border-[#C38296]/30 flex justify-between items-center font-bold text-lg text-[#70415D]">
                 <span>Valor Estimado:</span>
                 <span>{selectedService?.price || 'S/ 0'}</span>
@@ -1145,7 +1192,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
           <span className={`w-3 h-3 rounded-full ${isCloudSynced ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
           <span className="text-xs font-bold text-[#342A30]">
             {isCloudSynced 
-              ? "Warmi T'ika | Beauty Studio Cloud (Firebase): Tus clientas, fondos y servicios se guardan automáticamente." 
+              ? "Warmi T'ika | Beauty Studio Cloud (Firebase): Tus clientas, personal, fondos y servicios se guardan automáticamente." 
               : "Conectando con Firebase..."}
           </span>
         </div>
@@ -1612,6 +1659,9 @@ interface AdminDashboardProps {
   customers: CustomerItem[];
   onSaveCustomer: (cust: CustomerItem) => Promise<void>;
   onDeleteCustomer: (id: string) => Promise<void>;
+  staffList: StaffItem[];
+  onSaveStaff: (st: StaffItem) => Promise<void>;
+  onDeleteStaff: (id: string) => Promise<void>;
   customHeroBg: string;
   setCustomHeroBg: (val: string) => void;
   customCardBg: string;
@@ -1623,17 +1673,34 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
   onLogout, services, onSaveService, onDeleteService,
   customers, onSaveCustomer, onDeleteCustomer,
+  staffList, onSaveStaff, onDeleteStaff,
   customHeroBg, setCustomHeroBg, customCardBg, setCustomCardBg,
   onSaveSettings, isCloudSynced
 }) => {
   const [activeTab, setActiveTab] = useState('invitations');
+
+  // Estados para modal de Servicios
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '', category: 'Cabello', price: '', duration: '', image: '', description: ''
   });
 
+  // Estados para modal de Personal / Empleados
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<string | null>(null);
+  const [staffForm, setStaffForm] = useState<{
+    name: string;
+    specialty: string;
+    roles: string[];
+  }>({
+    name: '',
+    specialty: 'Especialista en Cabello y Alisados',
+    roles: ['Cabello']
+  });
+
   const safeServices = Array.isArray(services) ? services : [];
+  const safeStaff = Array.isArray(staffList) ? staffList : [];
 
   const handleOpenForm = (service: ServiceItem | null = null) => {
     if (service) {
@@ -1664,6 +1731,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsServiceModalOpen(false);
   };
 
+  const handleOpenStaffModal = (staffMember: StaffItem | null = null) => {
+    if (staffMember) {
+      setEditingStaff(staffMember.id);
+      setStaffForm({
+        name: staffMember.name || '',
+        specialty: staffMember.specialty || '',
+        roles: Array.isArray(staffMember.roles) && staffMember.roles.length > 0 ? staffMember.roles : ['Cabello']
+      });
+    } else {
+      setEditingStaff(null);
+      setStaffForm({
+        name: '',
+        specialty: 'Estilista Profesional',
+        roles: ['Cabello']
+      });
+    }
+    setIsStaffModalOpen(true);
+  };
+
+  const toggleStaffRole = (roleName: string) => {
+    setStaffForm((prev) => {
+      const exists = prev.roles.includes(roleName);
+      if (exists && prev.roles.length === 1) return prev; // Al menos 1 categoría activa
+      return {
+        ...prev,
+        roles: exists ? prev.roles.filter((r) => r !== roleName) : [...prev.roles, roleName]
+      };
+    });
+  };
+
+  const handleSaveStaffSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const id = editingStaff || `st${Date.now()}`;
+    await onSaveStaff({
+      id,
+      name: staffForm.name.trim(),
+      specialty: staffForm.specialty.trim(),
+      roles: staffForm.roles
+    });
+    setIsStaffModalOpen(false);
+  };
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#FFF8F5]">
       <aside className="w-full md:w-64 bg-[#342A30] text-white flex flex-col justify-between p-5">
@@ -1672,15 +1781,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <nav className="space-y-2">
             <button 
               onClick={() => setActiveTab('invitations')} 
-              className={`w-full flex items-center p-3 rounded-xl text-sm font-bold transition-colors ${
+              className={`w-full flex items-center p-3 rounded-xl text-sm font-bold transition-colors cursor-pointer ${
                 activeTab === 'invitations' ? 'bg-[#70415D] text-white' : 'text-gray-300 hover:bg-white/10'
               }`}
             >
               <MessageCircle size={18} className="mr-3"/> Invitaciones y Clientas
             </button>
             <button 
+              onClick={() => setActiveTab('staff')} 
+              className={`w-full flex items-center p-3 rounded-xl text-sm font-bold transition-colors cursor-pointer ${
+                activeTab === 'staff' ? 'bg-[#70415D] text-white' : 'text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              <UserCheck size={18} className="mr-3"/> Personal / Empleados
+            </button>
+            <button 
               onClick={() => setActiveTab('catalog')} 
-              className={`w-full flex items-center p-3 rounded-xl text-sm font-bold transition-colors ${
+              className={`w-full flex items-center p-3 rounded-xl text-sm font-bold transition-colors cursor-pointer ${
                 activeTab === 'catalog' ? 'bg-[#70415D] text-white' : 'text-gray-300 hover:bg-white/10'
               }`}
             >
@@ -1690,7 +1807,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
         <button 
           onClick={onLogout} 
-          className="mt-6 flex items-center justify-center text-sm font-bold text-gray-300 hover:text-white p-3 bg-white/5 rounded-xl"
+          className="mt-6 flex items-center justify-center text-sm font-bold text-gray-300 hover:text-white p-3 bg-white/5 rounded-xl cursor-pointer"
         >
           <LogOut size={18} className="mr-2"/> Salir a la Web
         </button>
@@ -1709,6 +1826,92 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onSaveSettings={onSaveSettings}
             isCloudSynced={isCloudSynced}
           />
+        )}
+
+        {activeTab === 'staff' && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-[#C38296]/30">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#879681]">
+                  Equipo de Trabajo en Tiempo Real
+                </span>
+                <h2 className="text-2xl font-serif text-[#70415D] mt-1">
+                  Personal y Especialistas — Warmi T&apos;ika | Beauty Studio
+                </h2>
+                <p className="text-xs text-gray-600 mt-1">
+                  Agrega o quita empleadas aquí. Los cambios aparecen automáticamente cuando las clientas reservan su cita en la web.
+                </p>
+              </div>
+              <Button variant="primary" onClick={() => handleOpenStaffModal()} className="font-bold shrink-0">
+                <Plus size={18} className="mr-1.5"/> Agregar Personal
+              </Button>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-[#FFF8F5] border-b text-xs text-[#70415D] uppercase font-bold">
+                    <th className="p-4">Nombre de la Especialista</th>
+                    <th className="p-4">Cargo / Especialidad</th>
+                    <th className="p-4">Áreas que Atiende en Reservas</th>
+                    <th className="p-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {safeStaff.map((member) => (
+                    <tr key={member.id} className="hover:bg-gray-50">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#70415D] to-[#B87583] text-white flex items-center justify-center font-serif font-bold text-base">
+                            {member.name ? member.name.charAt(0).toUpperCase() : 'W'}
+                          </div>
+                          <span className="font-bold text-[#342A30] text-sm">{member.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm text-gray-600 font-medium">
+                        {member.specialty}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {(Array.isArray(member.roles) ? member.roles : []).map((role) => (
+                            <span 
+                              key={role} 
+                              className="bg-[#FFF8F5] text-[#70415D] border border-[#C38296]/40 text-xs font-bold px-2.5 py-1 rounded-full"
+                            >
+                              {role}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <button 
+                          onClick={() => handleOpenStaffModal(member)} 
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer"
+                          title="Editar personal"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button 
+                          onClick={() => onDeleteStaff(member.id)} 
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
+                          title="Quitar personal del estudio"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {safeStaff.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="p-8 text-center text-sm text-gray-500">
+                        No hay personal registrado. Haz clic en &quot;Agregar Personal&quot; para añadir a tu equipo.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
 
         {activeTab === 'catalog' && (
@@ -1761,6 +1964,69 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
+        {/* MODAL PARA AGREGAR / EDITAR PERSONAL */}
+        <Modal 
+          isOpen={isStaffModalOpen} 
+          onClose={() => setIsStaffModalOpen(false)} 
+          title={editingStaff ? "Editar Especialista" : "Agregar Personal a Warmi T'ika"}
+        >
+          <form onSubmit={handleSaveStaffSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase text-gray-700 mb-1">Nombre de la Especialista *</label>
+              <input 
+                required 
+                type="text"
+                placeholder="Ej. Valeria o María"
+                value={staffForm.name} 
+                onChange={e => setStaffForm({...staffForm, name: e.target.value})} 
+                className="w-full border border-[#C38296]/50 rounded-xl p-2.5 text-sm outline-none" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase text-gray-700 mb-1">Especialidad o Cargo *</label>
+              <input 
+                required 
+                type="text"
+                placeholder="Ej. Especialista en Alisados, Color y Peinados"
+                value={staffForm.specialty} 
+                onChange={e => setStaffForm({...staffForm, specialty: e.target.value})} 
+                className="w-full border border-[#C38296]/50 rounded-xl p-2.5 text-sm outline-none" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase text-gray-700 mb-2">
+                ¿Qué categorías de servicio realiza? (Selecciona una o varias)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {SERVICE_CATEGORIES.map((cat) => {
+                  const active = staffForm.roles.includes(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => toggleStaffRole(cat)}
+                      className={`px-3.5 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                        active 
+                          ? 'bg-[#70415D] text-white border-[#70415D] shadow-sm' 
+                          : 'bg-[#FFF8F5] text-gray-600 border-[#C38296]/40 hover:border-[#70415D]'
+                      }`}
+                    >
+                      {active && <Check size={13} />} {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="pt-3 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setIsStaffModalOpen(false)}>Cancelar</Button>
+              <Button type="submit" variant="primary" className="font-bold">
+                {editingStaff ? "Guardar Cambios" : "Registrar Personal"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* MODAL PARA AGREGAR / EDITAR SERVICIO */}
         <Modal isOpen={isServiceModalOpen} onClose={() => setIsServiceModalOpen(false)} title={editingService ? "Editar Servicio" : "Nuevo Servicio en Warmi T'ika"}>
           <form onSubmit={handleSaveServiceSubmit} className="space-y-4">
             <div>
@@ -1771,11 +2037,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div>
                 <label className="block text-xs font-bold uppercase mb-1">Categoría</label>
                 <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none">
-                  <option value="Cabello">Cabello</option>
-                  <option value="Uñas">Uñas</option>
-                  <option value="Cejas">Cejas</option>
-                  <option value="Pestañas">Pestañas</option>
-                  <option value="Labios">Labios</option>
+                  {SERVICE_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -1811,6 +2075,7 @@ export default function App() {
   const [isAdminAuth, setIsAdminAuth] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>(initialMockServices);
   const [customers, setCustomers] = useState<CustomerItem[]>(mockInactiveCustomers);
+  const [staffList, setStaffList] = useState<StaffItem[]>(initialMockStaff);
   const [selectedServiceFromHome, setSelectedServiceFromHome] = useState<ServiceItem | null>(null);
   const [customHeroBg, setCustomHeroBg] = useState(DEFAULT_HERO_BG);
   const [customCardBg, setCustomCardBg] = useState(DEFAULT_CARD_BG);
@@ -1878,6 +2143,22 @@ export default function App() {
       (err) => console.error("Error leyendo clientas:", err)
     );
 
+    const staffCol = collection(db, 'artifacts', appId, 'public', 'data', 'staff');
+    const unsubStaff = onSnapshot(
+      staffCol,
+      (snapshot) => {
+        if (snapshot.empty) {
+          initialMockStaff.forEach((st) => {
+            setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'staff', st.id), st);
+          });
+        } else {
+          const loadedStaff = snapshot.docs.map(d => d.data() as StaffItem);
+          setStaffList(loadedStaff);
+        }
+      },
+      (err) => console.error("Error leyendo personal:", err)
+    );
+
     const settingsDoc = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'theme');
     const unsubSettings = onSnapshot(
       settingsDoc,
@@ -1896,6 +2177,7 @@ export default function App() {
     return () => {
       unsubServices();
       unsubCustomers();
+      unsubStaff();
       unsubSettings();
     };
   }, [user]);
@@ -1921,6 +2203,31 @@ export default function App() {
         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', customerId));
       } catch (e) {
         console.error("Error eliminando clienta:", e);
+      }
+    }
+  };
+
+  const handleSaveStaff = async (staffObj: StaffItem) => {
+    setStaffList(prev => {
+      const exists = prev.some(s => s.id === staffObj.id);
+      return exists ? prev.map(s => s.id === staffObj.id ? staffObj : s) : [...prev, staffObj];
+    });
+    if (user && db) {
+      try {
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'staff', staffObj.id), staffObj);
+      } catch (e) {
+        console.error("Error guardando personal:", e);
+      }
+    }
+  };
+
+  const handleDeleteStaff = async (staffId: string) => {
+    setStaffList(prev => prev.filter(s => s.id !== staffId));
+    if (user && db) {
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'staff', staffId));
+      } catch (e) {
+        console.error("Error eliminando personal:", e);
       }
     }
   };
@@ -1981,6 +2288,9 @@ export default function App() {
         customers={customers}
         onSaveCustomer={handleSaveCustomer}
         onDeleteCustomer={handleDeleteCustomer}
+        staffList={staffList}
+        onSaveStaff={handleSaveStaff}
+        onDeleteStaff={handleDeleteStaff}
         customHeroBg={customHeroBg}
         setCustomHeroBg={setCustomHeroBg}
         customCardBg={customCardBg}
@@ -2013,12 +2323,12 @@ export default function App() {
           />
         )}
         {currentRoute === 'booking' && (
-          <BookingFlow navigate={setCurrentRoute} services={services} />
+          <BookingFlow navigate={setCurrentRoute} services={services} staffList={staffList} />
         )}
       </main>
 
       <a 
-        href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika%20Beauty%20Studio%20%F0%9F%8C%B7%20Deseo%20agendar%20una%20cita" 
+        href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika%20%7C%20Beauty%20Studio%20%F0%9F%8C%B7%20Deseo%20agendar%20una%20cita" 
         target="_blank" 
         rel="noopener noreferrer" 
         className="fixed bottom-6 right-6 bg-[#2e7d5b] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform z-50 border-2 border-white flex items-center gap-2"
