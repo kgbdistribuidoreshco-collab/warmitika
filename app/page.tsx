@@ -6,7 +6,7 @@ import {
   Users, Settings, LogOut, Camera, Lock, 
   Edit, Trash2, Plus, AlertCircle, Flower2,
   ArrowUpDown, Copy, RefreshCw, UserCheck,
-  Calendar, CheckCircle2, XCircle, Bell
+  Calendar, CheckCircle2, XCircle, Bell, Mail
 } from 'lucide-react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
@@ -15,6 +15,14 @@ import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'fi
 declare const __firebase_config: string | undefined;
 declare const __app_id: string | undefined;
 declare const __initial_auth_token: string | undefined;
+
+// Datos oficiales de contacto de Warmi T'ika | Beauty Studio
+const STUDIO_WHATSAPP = "51980448876";
+const STUDIO_PHONE_DISPLAY = "+51 980 448 876";
+const STUDIO_ADDRESS = "Jr. Huallayco 1459, Huánuco, Perú";
+const STUDIO_EMAIL = "warmitika42@gmail.com";
+const STUDIO_TIKTOK_USER = "warmi.tika";
+const STUDIO_TWITTER_USER = "warmi_tik_a";
 
 export interface ServiceItem {
   id: string;
@@ -111,11 +119,11 @@ const FLOWER_FAVICON_SVG = `data:image/svg+xml,<svg xmlns="http://www.w3.org/200
 // Plantillas cálidas y familiares para confirmar citas por WhatsApp
 const WARM_WELCOME_MESSAGES = [
   (name: string, service: string, date: string, time: string, staff: string) =>
-    `¡Hola, querida ${name}! 🌸 Qué alegría tan grande recibirte en la familia de *Warmi T'ika | Beauty Studio*. Queremos agradecerte de todo corazón por tu preferencia y confianza. ✨ Tu cita para *${service}* ya quedó oficialmente confirmada${date ? ` para el *${date}*` : ''} a las *${time} hrs* (${staff}). Te esperamos en casa con muchísimo cariño para engreírte como mereces. ¡Un abrazo enorme! 💖🌷`,
+    `¡Hola, querida ${name}! 🌸 Qué alegría tan grande recibirte en la familia de *Warmi T'ika | Beauty Studio*. Queremos agradecerte de todo corazón por tu preferencia y confianza. ✨ Tu cita para *${service}* ya quedó oficialmente confirmada${date ? ` para el *${date}*` : ''} a las *${time} hrs* (${staff}). Te esperamos en ${STUDIO_ADDRESS} con muchísimo cariño para engreírte como mereces. ¡Un abrazo enorme! 💖🌷`,
   (name: string, service: string, date: string, time: string, staff: string) =>
-    `¡Bienvenida a tu casa, hermosa ${name}! 🌷 En *Warmi T'ika | Beauty Studio* cada clienta es parte de nuestra familia y nos hace muy felices que nos hayas elegido. Confirmamos con mucho cariño tu reserva de *${service}*${date ? ` el día *${date}*` : ''} a las *${time} hrs* (${staff}). ¡Gracias por preferirnos, estamos listas para consentirte! ✨🌸`,
+    `¡Bienvenida a tu casa, hermosa ${name}! 🌷 En *Warmi T'ika | Beauty Studio* cada clienta es parte de nuestra familia y nos hace muy felices que nos hayas elegido. Confirmamos con mucho cariño tu reserva de *${service}*${date ? ` el día *${date}*` : ''} a las *${time} hrs* (${staff}) en ${STUDIO_ADDRESS}. ¡Gracias por preferirnos, estamos listas para consentirte! ✨🌸`,
   (name: string, service: string, date: string, time: string, staff: string) =>
-    `¡Hola, linda ${name}! 💐 ¡Mil gracias por elegir a *Warmi T'ika | Beauty Studio*! Para nosotras es un honor cuidarte y hacerte sentir como en familia. Te escribimos para confirmar tu espacio de *${service}*${date ? ` para el *${date}*` : ''} a las *${time} hrs* (${staff}). ¡Te esperamos con los brazos abiertos y toda nuestra dedicación! 💖✨`
+    `¡Hola, linda ${name}! 💐 ¡Mil gracias por elegir a *Warmi T'ika | Beauty Studio*! Para nosotras es un honor cuidarte y hacerte sentir como en familia. Te escribimos para confirmar tu espacio de *${service}*${date ? ` para el *${date}*` : ''} a las *${time} hrs* (${staff}). ¡Te esperamos en ${STUDIO_ADDRESS} con los brazos abiertos y toda nuestra dedicación! 💖✨`
 ];
 
 // Calcula automáticamente los días transcurridos si tiene fecha DD/MM/YYYY o usa el campo days
@@ -239,7 +247,7 @@ const initialMockStaff: StaffItem[] = [
 
 const mockInactiveCustomers: CustomerItem[] = [
   { id: 'c1', name: 'Valeria Mendoza', phone: '912345678', lastVisit: '22/08/2026', service: 'Balayage Iluminado', days: 45 },
-  { id: 'c2', name: 'Carla Rojas', phone: '987654321', lastVisit: '30/08/2026', service: 'Manicure Acrílica', days: 32 },
+  { id: 'c2', name: 'Carla Rojas', phone: '980448876', lastVisit: '30/08/2026', service: 'Manicure Acrílica', days: 32 },
   { id: 'c3', name: 'Luciana Paredes', phone: '955443322', lastVisit: '10/08/2026', service: 'Lifting Nutritivo + Tinte', days: 58 }
 ];
 
@@ -263,7 +271,7 @@ const ANTI_SPAM_TEMPLATES: TemplateItem[] = [
   { id: 't17', name: '17. Tardes de belleza en el estudio', content: "¡Hola, {{nombre}}! 🌸 Ya van {{dias}} días desde que estuviste en Warmi T'ika | Beauty Studio. Si deseas agendar esta semana, tienes activo {{beneficio}} con el código {{codigo}} hasta el {{fecha_vencimiento}}." },
   { id: 't18', name: '18. Mimo garantizado', content: "Hola {{nombre}} 🌷 Queremos que vuelvas a vivir la experiencia Warmi T'ika | Beauty Studio. Como pasaron {{dias}} días desde tu última atención de {{servicio}}, tienes {{beneficio}} listo con el código {{codigo}}." },
   { id: 't19', name: '19. Tu tarjeta de descuento personal', content: "¡Hola {{nombre}}! ✨ Te adjuntamos tu pase especial de Warmi T'ika | Beauty Studio. Hace {{dias}} días realizamos tu {{servicio}} y hoy tienes {{beneficio}} exclusivo con el código {{codigo}}." },
-  { id: 't20', name: '20. Mensaje corto y directo anti-spam', content: "Hola {{nombre}} 🌸 ¡Te esperamos en Warmi T'ika | Beauty Studio! Ya pasaron {{dias}} días desde tu visita de {{servicio}} y tienes {{beneficio}} disponible con el código {{codigo}} (vence el {{fecha_vencimiento}})." }
+  { id: '20', name: '20. Mensaje corto y directo anti-spam', content: "Hola {{nombre}} 🌸 ¡Te esperamos en Warmi T'ika | Beauty Studio! Ya pasaron {{dias}} días desde tu visita de {{servicio}} y tienes {{beneficio}} disponible con el código {{codigo}} (vence el {{fecha_vencimiento}})." }
 ];
 
 interface CardBlobParams {
@@ -392,7 +400,7 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
 
   ctx.fillStyle = '#879681';
   ctx.font = '20px sans-serif';
-  ctx.fillText("Warmi T'ika | Beauty Studio • Presenta esta tarjeta por WhatsApp • Válido hasta el 30/10/2026", 540, 925);
+  ctx.fillText(`Warmi T'ika | ${STUDIO_ADDRESS} • WhatsApp ${STUDIO_PHONE_DISPLAY}`, 540, 925);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
@@ -490,16 +498,22 @@ const HomeView: React.FC<HomeViewProps> = ({ navigate, services, customHeroBg, o
             <span className="text-[#70415D] italic">un estilo que te representa.</span>
           </h1>
 
-          <p className="text-base md:text-lg text-[#342A30]/90 mb-10 max-w-xl mx-auto leading-relaxed font-medium">
+          <p className="text-base md:text-lg text-[#342A30]/90 mb-6 max-w-xl mx-auto leading-relaxed font-medium">
             Sumérgete en un ambiente exclusivo de cuidado y calma. En <strong>Warmi T&apos;ika | Beauty Studio</strong> cuidamos cada detalle para realzar tu belleza natural.
           </p>
+
+          <div className="inline-flex flex-wrap items-center justify-center gap-3 text-xs font-bold text-[#70415D] bg-white/85 px-4 py-2 rounded-full border border-[#C38296]/40 mb-8 shadow-sm">
+            <span className="flex items-center gap-1"><MapPin size={14} className="text-[#B87583]"/> {STUDIO_ADDRESS}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1"><MessageCircle size={14} className="text-[#2e7d5b]"/> {STUDIO_PHONE_DISPLAY}</span>
+          </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button variant="primary" className="w-full sm:w-auto !px-8 !py-4 text-base font-bold" onClick={() => navigate('booking')}>
               Reservar mi cita <ChevronRight size={20} className="ml-2"/>
             </Button>
             <a 
-              href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika%20Beauty%20Studio,%20deseo%20informaci%C3%B3n%20para%20una%20cita" 
+              href={`https://wa.me/${STUDIO_WHATSAPP}?text=${encodeURIComponent("Hola Warmi T'ika | Beauty Studio, deseo información para una cita")}`} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="w-full sm:w-auto"
@@ -701,7 +715,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({ navigate, services, initialSe
                   Reservar este servicio
                 </Button>
                 <a 
-                  href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika | Beauty Studio, deseo consultar por el servicio: ${selectedService.name}`)}`}
+                  href={`https://wa.me/${STUDIO_WHATSAPP}?text=${encodeURIComponent(`Hola Warmi T'ika | Beauty Studio, deseo consultar por el servicio: ${selectedService.name}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -757,7 +771,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
     const newBooking: BookingItem = {
       id: `bk${Date.now()}`,
       customerName: customerName.trim() || 'Clienta Web',
-      customerPhone: customerPhone.trim() || '987654321',
+      customerPhone: customerPhone.trim() || '980448876',
       serviceId: selectedService.id,
       serviceName: selectedService.name,
       servicePrice: selectedService.price,
@@ -782,11 +796,11 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
           </div>
           <h2 className="text-3xl font-serif text-[#70415D] mb-3">¡Solicitud Enviada!</h2>
           <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-            Gracias, <strong>{customerName || 'Hermosa'}</strong>. Hemos recibido tu solicitud en <strong>Warmi T&apos;ika | Beauty Studio</strong> para <strong>{selectedService?.name}</strong> con <strong>{selectedStaff}</strong>. En breve te enviaremos un mensaje de bienvenida a tu WhatsApp confirmando tu cita.
+            Gracias, <strong>{customerName || 'Hermosa'}</strong>. Hemos recibido tu solicitud en <strong>Warmi T&apos;ika | Beauty Studio</strong> ({STUDIO_ADDRESS}) para <strong>{selectedService?.name}</strong> con <strong>{selectedStaff}</strong>. En breve te enviaremos un mensaje de bienvenida a tu WhatsApp confirmando tu cita.
           </p>
           <div className="flex flex-col gap-3">
             <a
-              href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika | Beauty Studio 🌸 Soy ${customerName || 'clienta'}, acabo de registrar mi solicitud en la web para ${selectedService?.name || 'mi cita'} con ${selectedStaff}${selectedDate ? ` el ${selectedDate}` : ''} a las ${selectedTime}.`)}`}
+              href={`https://wa.me/${STUDIO_WHATSAPP}?text=${encodeURIComponent(`Hola Warmi T'ika | Beauty Studio 🌸 Soy ${customerName || 'clienta'}, acabo de registrar mi solicitud en la web para ${selectedService?.name || 'mi cita'} con ${selectedStaff}${selectedDate ? ` el ${selectedDate}` : ''} a las ${selectedTime}.`)}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -875,7 +889,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
                   <option value="Cualquier profesional disponible">✨ Cualquier profesional disponible</option>
                   {matchingStaff.map(s => (
                     <option key={s.id} value={`${s.name} (${s.specialty})`}>
-                      👩🎨 {s.name} — {s.specialty}
+                      👩‍🎨 {s.name} — {s.specialty}
                     </option>
                   ))}
                 </select>
@@ -939,7 +953,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
                   type="tel" 
                   value={customerPhone}
                   onChange={e => setCustomerPhone(e.target.value)}
-                  placeholder="999 999 999" 
+                  placeholder="980 448 876" 
                   className="w-full border border-[#C38296]/50 rounded-xl p-3 outline-none" 
                 />
               </div>
@@ -968,6 +982,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
               <p className="text-sm"><strong>Horario:</strong> {selectedTime} hrs</p>
               <p className="text-sm"><strong>Clienta:</strong> {customerName || 'Invitada'}</p>
               <p className="text-sm"><strong>WhatsApp:</strong> +51 {customerPhone}</p>
+              <p className="text-sm"><strong>Dirección:</strong> {STUDIO_ADDRESS}</p>
               <div className="mt-4 pt-3 border-t border-[#C38296]/30 flex justify-between items-center font-bold text-lg text-[#70415D]">
                 <span>Valor Estimado:</span>
                 <span>{selectedService?.price || 'S/ 0'}</span>
@@ -1131,7 +1146,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
     }
   };
 
-  const customerPhone = (selectedCustomer?.phone || '987654321').replace(/\D/g, '');
+  const customerPhone = (selectedCustomer?.phone || '980448876').replace(/\D/g, '');
   const waLink = `https://wa.me/51${customerPhone}?text=${encodeURIComponent(getParsedText())}`;
 
   const handleDownloadCard = async (custOverride: CustomerItem | null = null) => {
@@ -1177,7 +1192,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
     const firstName = target.name ? target.name.trim().split(' ')[0] : 'Hermosa';
     const effectiveDays = getEffectiveDays(target);
     const messageText = buildMessageForCustomer(target, chosenTemplate);
-    const cleanPhone = (target.phone || '987654321').replace(/\D/g, '');
+    const cleanPhone = (target.phone || '980448876').replace(/\D/g, '');
     const fullPhone = cleanPhone.startsWith('51') ? cleanPhone : `51${cleanPhone}`;
     const directWaUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(messageText)}`;
 
@@ -1756,7 +1771,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
             <input 
               required 
               type="tel"
-              placeholder="Ej. 987654321"
+              placeholder="Ej. 980448876"
               value={customerForm.phone} 
               onChange={e => setCustomerForm({...customerForm, phone: e.target.value})} 
               className="w-full border border-[#C38296]/50 rounded-xl p-2.5 text-sm outline-none" 
@@ -2696,7 +2711,7 @@ export default function App() {
       </main>
 
       <a 
-        href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika%20%7C%20Beauty%20Studio%20%F0%9F%8C%B7%20Deseo%20agendar%20una%20cita" 
+        href={`https://wa.me/${STUDIO_WHATSAPP}?text=${encodeURIComponent("Hola Warmi T'ika | Beauty Studio 🌷 Deseo agendar una cita")}`} 
         target="_blank" 
         rel="noopener noreferrer" 
         className="fixed bottom-6 right-6 bg-[#2e7d5b] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform z-50 border-2 border-white flex items-center gap-2"
@@ -2705,21 +2720,56 @@ export default function App() {
       </a>
 
       <footer className="bg-[#342A30] text-white py-12 border-t-4 border-[#B87583]">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           <div>
             <Logo className="h-16 mb-3" color="white" />
-            <p className="text-gray-300 text-sm">
+            <p className="text-gray-300 text-sm leading-relaxed">
               <strong>Warmi T&apos;ika | Beauty Studio</strong> — Un estudio exclusivo diseñado para resaltar tu belleza natural.
             </p>
           </div>
-          <div className="space-y-2 text-sm text-gray-300">
-            <p className="flex items-center"><MapPin size={16} className="mr-2 text-[#B87583]"/> Atención previa cita — Perú</p>
-            <p className="flex items-center"><MessageCircle size={16} className="mr-2 text-[#879681]"/> WhatsApp: +51 987 654 321</p>
+          <div className="space-y-2.5 text-sm text-gray-300">
+            <h4 className="font-serif text-base text-white font-bold mb-2">Contacto y Ubicación</h4>
+            <p className="flex items-center">
+              <MapPin size={16} className="mr-2.5 text-[#B87583] shrink-0"/> {STUDIO_ADDRESS}
+            </p>
+            <p className="flex items-center">
+              <MessageCircle size={16} className="mr-2.5 text-[#879681] shrink-0"/> 
+              <a href={`https://wa.me/${STUDIO_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                WhatsApp: {STUDIO_PHONE_DISPLAY}
+              </a>
+            </p>
+            <p className="flex items-center">
+              <Mail size={16} className="mr-2.5 text-[#C38296] shrink-0"/> 
+              <a href={`mailto:${STUDIO_EMAIL}`} className="hover:underline">
+                {STUDIO_EMAIL}
+              </a>
+            </p>
           </div>
-          <div className="flex md:justify-end">
-            <Button variant="outline" onClick={() => setCurrentRoute('admin')} className="text-xs font-bold">
-              Acceso Personal / Admin
-            </Button>
+          <div className="flex flex-col md:items-end space-y-3">
+            <h4 className="font-serif text-base text-white font-bold">Síguenos en Redes</h4>
+            <div className="flex flex-wrap gap-2.5">
+              <a 
+                href={`https://www.tiktok.com/@${STUDIO_TIKTOK_USER}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#B87583] text-xs font-bold transition-colors flex items-center gap-1.5"
+              >
+                🎵 TikTok: @{STUDIO_TIKTOK_USER}
+              </a>
+              <a 
+                href={`https://x.com/${STUDIO_TWITTER_USER}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#B87583] text-xs font-bold transition-colors flex items-center gap-1.5"
+              >
+                𝕏 Twitter: @{STUDIO_TWITTER_USER}
+              </a>
+            </div>
+            <div className="pt-2">
+              <Button variant="outline" onClick={() => setCurrentRoute('admin')} className="text-xs font-bold">
+                Acceso Personal / Admin
+              </Button>
+            </div>
           </div>
         </div>
       </footer>
