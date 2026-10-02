@@ -90,6 +90,9 @@ const DEFAULT_CARD_BG = "https://i.imgur.com/mD1A455.png";
 
 const SERVICE_CATEGORIES = ['Cabello', 'Uñas', 'Cejas', 'Pestañas', 'Labios'];
 
+// Favicon SVG de flor con los colores oficiales de Warmi T'ika | Beauty Studio
+const FLOWER_FAVICON_SVG = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="14" r="11" fill="%23B87583"/><circle cx="49" cy="25" r="11" fill="%2370415D"/><circle cx="43" cy="46" r="11" fill="%23B87583"/><circle cx="21" cy="46" r="11" fill="%2370415D"/><circle cx="15" cy="25" r="11" fill="%23B87583"/><circle cx="32" cy="32" r="9" fill="%23FFF8F5" stroke="%2370415D" stroke-width="2"/><circle cx="32" cy="32" r="4" fill="%23D4AF37"/></svg>`;
+
 // Calcula automáticamente los días transcurridos si tiene fecha DD/MM/YYYY o usa el campo days
 const getEffectiveDays = (cust: CustomerItem | undefined): number => {
   if (!cust) return 30;
@@ -698,7 +701,6 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
   const safeServices = Array.isArray(services) ? services : [];
   const safeStaff = Array.isArray(staffList) ? staffList : [];
 
-  // Filtra las profesionales que atienden la categoría del servicio elegido (o muestra todas si no hay filtro específico)
   const matchingStaff = useMemo(() => {
     if (!selectedService) return safeStaff;
     const filtered = safeStaff.filter(
@@ -984,7 +986,6 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
   customers, onSaveCustomer, onDeleteCustomer,
   onSaveSettings, isCloudSynced
 }) => {
-  // ORDENAMIENTO AUTOMÁTICO: Las clientas con MÁS DÍAS SIN VISITA van ARRIBA DEL TODO
   const sortedCustomers = useMemo(() => {
     const baseList = Array.isArray(customers) && customers.length > 0 ? customers : mockInactiveCustomers;
     return [...baseList].sort((a, b) => getEffectiveDays(b) - getEffectiveDays(a));
@@ -1679,14 +1680,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('invitations');
 
-  // Estados para modal de Servicios
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '', category: 'Cabello', price: '', duration: '', image: '', description: ''
   });
 
-  // Estados para modal de Personal / Empleados
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<string | null>(null);
   const [staffForm, setStaffForm] = useState<{
@@ -1753,7 +1752,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const toggleStaffRole = (roleName: string) => {
     setStaffForm((prev) => {
       const exists = prev.roles.includes(roleName);
-      if (exists && prev.roles.length === 1) return prev; // Al menos 1 categoría activa
+      if (exists && prev.roles.length === 1) return prev;
       return {
         ...prev,
         roles: exists ? prev.roles.filter((r) => r !== roleName) : [...prev.roles, roleName]
@@ -2082,9 +2081,20 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
 
-  // Asegura que la pestaña del navegador siempre diga únicamente "Warmi T'ika | Beauty Studio"
+  // Asegura que la pestaña del navegador tenga el título oficial y el favicon de flor de Warmi T'ika
   useEffect(() => {
     document.title = "Warmi T'ika | Beauty Studio";
+    const existingIcons = document.querySelectorAll("link[rel*='icon']");
+    existingIcons.forEach((el) => {
+      (el as HTMLLinkElement).href = FLOWER_FAVICON_SVG;
+    });
+    if (existingIcons.length === 0) {
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.type = 'image/svg+xml';
+      link.href = FLOWER_FAVICON_SVG;
+      document.head.appendChild(link);
+    }
   }, [currentRoute]);
 
   useEffect(() => {
