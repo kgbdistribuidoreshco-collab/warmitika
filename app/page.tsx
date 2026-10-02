@@ -5,7 +5,8 @@ import {
   X, Check, MapPin, Sparkles, MessageCircle, 
   Users, Settings, LogOut, Camera, Lock, 
   Edit, Trash2, Plus, AlertCircle, Flower2,
-  ArrowUpDown, Copy, RefreshCw, UserCheck
+  ArrowUpDown, Copy, RefreshCw, UserCheck,
+  Calendar, CheckCircle2, XCircle, Bell
 } from 'lucide-react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
@@ -39,6 +40,20 @@ export interface StaffItem {
   name: string;
   specialty: string;
   roles: string[];
+}
+
+export interface BookingItem {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  serviceId: string;
+  serviceName: string;
+  servicePrice: string;
+  staffName: string;
+  date: string;
+  time: string;
+  status: 'pending' | 'confirmed';
+  createdAt: string;
 }
 
 export interface TemplateItem {
@@ -93,11 +108,21 @@ const SERVICE_CATEGORIES = ['Cabello', 'Uñas', 'Cejas', 'Pestañas', 'Labios'];
 // Favicon SVG de flor con los colores oficiales de Warmi T'ika | Beauty Studio
 const FLOWER_FAVICON_SVG = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="14" r="11" fill="%23B87583"/><circle cx="49" cy="25" r="11" fill="%2370415D"/><circle cx="43" cy="46" r="11" fill="%23B87583"/><circle cx="21" cy="46" r="11" fill="%2370415D"/><circle cx="15" cy="25" r="11" fill="%23B87583"/><circle cx="32" cy="32" r="9" fill="%23FFF8F5" stroke="%2370415D" stroke-width="2"/><circle cx="32" cy="32" r="4" fill="%23D4AF37"/></svg>`;
 
+// Plantillas cálidas y familiares para confirmar citas por WhatsApp
+const WARM_WELCOME_MESSAGES = [
+  (name: string, service: string, date: string, time: string, staff: string) =>
+    `¡Hola, querida ${name}! 🌸 Qué alegría tan grande recibirte en la familia de *Warmi T'ika | Beauty Studio*. Queremos agradecerte de todo corazón por tu preferencia y confianza. ✨ Tu cita para *${service}* ya quedó oficialmente confirmada${date ? ` para el *${date}*` : ''} a las *${time} hrs* (${staff}). Te esperamos en casa con muchísimo cariño para engreírte como mereces. ¡Un abrazo enorme! 💖🌷`,
+  (name: string, service: string, date: string, time: string, staff: string) =>
+    `¡Bienvenida a tu casa, hermosa ${name}! 🌷 En *Warmi T'ika | Beauty Studio* cada clienta es parte de nuestra familia y nos hace muy felices que nos hayas elegido. Confirmamos con mucho cariño tu reserva de *${service}*${date ? ` el día *${date}*` : ''} a las *${time} hrs* (${staff}). ¡Gracias por preferirnos, estamos listas para consentirte! ✨🌸`,
+  (name: string, service: string, date: string, time: string, staff: string) =>
+    `¡Hola, linda ${name}! 💐 ¡Mil gracias por elegir a *Warmi T'ika | Beauty Studio*! Para nosotras es un honor cuidarte y hacerte sentir como en familia. Te escribimos para confirmar tu espacio de *${service}*${date ? ` para el *${date}*` : ''} a las *${time} hrs* (${staff}). ¡Te esperamos con los brazos abiertos y toda nuestra dedicación! 💖✨`
+];
+
 // Calcula automáticamente los días transcurridos si tiene fecha DD/MM/YYYY o usa el campo days
 const getEffectiveDays = (cust: CustomerItem | undefined): number => {
   if (!cust) return 30;
   const manualDays = Number(cust.days);
-  if (!isNaN(manualDays) && manualDays > 0) return manualDays;
+  if (!isNaN(manualDays) && manualDays >= 0 && cust.days !== undefined) return manualDays;
   if (cust.lastVisit) {
     const parts = cust.lastVisit.split('/');
     if (parts.length === 3) {
@@ -378,9 +403,10 @@ interface PublicNavbarProps {
   navigate: (route: string) => void;
   activeRoute: string;
   isCloudSynced: boolean;
+  pendingBookingsCount: number;
 }
 
-const PublicNavbar: React.FC<PublicNavbarProps> = ({ navigate, activeRoute, isCloudSynced }) => (
+const PublicNavbar: React.FC<PublicNavbarProps> = ({ navigate, activeRoute, isCloudSynced, pendingBookingsCount }) => (
   <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-[#C38296]/25 shadow-sm">
     <div className="max-w-6xl mx-auto px-4 h-22 py-2 flex items-center justify-between">
       <div className="cursor-pointer flex items-center gap-3" onClick={() => navigate('home')}>
@@ -401,18 +427,28 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ navigate, activeRoute, isCl
         </button>
         <button 
           onClick={() => navigate('admin')} 
-          className="text-xs font-semibold text-[#879681] hover:text-[#70415D] transition-colors flex items-center gap-1.5"
+          className="text-xs font-semibold text-[#879681] hover:text-[#70415D] transition-colors flex items-center gap-1.5 relative"
         >
           <span className={`w-2 h-2 rounded-full ${isCloudSynced ? 'bg-emerald-500' : 'bg-amber-400'}`}></span>
           Panel Admin
+          {pendingBookingsCount > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-rose-600 text-white rounded-full animate-bounce">
+              {pendingBookingsCount}
+            </span>
+          )}
         </button>
         <Button variant="primary" onClick={() => navigate('booking')} className="font-bold">
           Reservar mi cita
         </Button>
       </nav>
       <div className="flex md:hidden items-center gap-2">
-        <Button variant="ghost" onClick={() => navigate('admin')} className="!px-2.5 !py-1.5 text-xs font-bold">
+        <Button variant="ghost" onClick={() => navigate('admin')} className="!px-2.5 !py-1.5 text-xs font-bold relative">
           Admin
+          {pendingBookingsCount > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-rose-600 text-white rounded-full">
+              {pendingBookingsCount}
+            </span>
+          )}
         </Button>
         <Button variant="primary" onClick={() => navigate('booking')} className="!px-3 !py-1.5 text-xs font-bold">
           Reservar
@@ -686,9 +722,10 @@ interface BookingFlowProps {
   navigate: (route: string) => void;
   services: ServiceItem[];
   staffList: StaffItem[];
+  onCreateBooking: (booking: BookingItem) => Promise<void>;
 }
 
-const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList }) => {
+const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList, onCreateBooking }) => {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<string>('Cualquier profesional disponible');
@@ -697,6 +734,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const safeServices = Array.isArray(services) ? services : [];
   const safeStaff = Array.isArray(staffList) ? staffList : [];
@@ -709,6 +747,32 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
     return filtered.length > 0 ? filtered : safeStaff;
   }, [safeStaff, selectedService]);
 
+  const handleConfirmBooking = async () => {
+    if (!selectedService) return;
+    setIsSubmitting(true);
+    const formattedDate = selectedDate
+      ? selectedDate.split('-').reverse().join('/')
+      : new Date().toLocaleDateString('es-PE');
+
+    const newBooking: BookingItem = {
+      id: `bk${Date.now()}`,
+      customerName: customerName.trim() || 'Clienta Web',
+      customerPhone: customerPhone.trim() || '987654321',
+      serviceId: selectedService.id,
+      serviceName: selectedService.name,
+      servicePrice: selectedService.price,
+      staffName: selectedStaff,
+      date: formattedDate,
+      time: selectedTime,
+      status: 'pending',
+      createdAt: new Date().toLocaleString('es-PE')
+    };
+
+    await onCreateBooking(newBooking);
+    setIsSubmitting(false);
+    setShowSuccess(true);
+  };
+
   if (showSuccess) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
@@ -716,18 +780,18 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
           <div className="w-20 h-20 bg-[#879681]/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check size={40} className="text-[#2e7d5b]" />
           </div>
-          <h2 className="text-3xl font-serif text-[#70415D] mb-3">¡Solicitud Registrada!</h2>
-          <p className="text-gray-600 text-sm mb-6">
-            Gracias, <strong>{customerName || 'Hermosa'}</strong>. Hemos reservado tu espacio en <strong>Warmi T&apos;ika | Beauty Studio</strong> para <strong>{selectedService?.name}</strong> con <strong>{selectedStaff}</strong>.
+          <h2 className="text-3xl font-serif text-[#70415D] mb-3">¡Solicitud Enviada!</h2>
+          <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+            Gracias, <strong>{customerName || 'Hermosa'}</strong>. Hemos recibido tu solicitud en <strong>Warmi T&apos;ika | Beauty Studio</strong> para <strong>{selectedService?.name}</strong> con <strong>{selectedStaff}</strong>. En breve te enviaremos un mensaje de bienvenida a tu WhatsApp confirmando tu cita.
           </p>
           <div className="flex flex-col gap-3">
             <a
-              href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika | Beauty Studio 🌸 Soy ${customerName || 'clienta'}, acabo de reservar ${selectedService?.name || 'mi cita'} con ${selectedStaff}${selectedDate ? ` para el ${selectedDate}` : ''} a las ${selectedTime}.`)}`}
+              href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika | Beauty Studio 🌸 Soy ${customerName || 'clienta'}, acabo de registrar mi solicitud en la web para ${selectedService?.name || 'mi cita'} con ${selectedStaff}${selectedDate ? ` el ${selectedDate}` : ''} a las ${selectedTime}.`)}`}
               target="_blank"
               rel="noopener noreferrer"
             >
               <Button variant="whatsapp" className="w-full font-bold">
-                <MessageCircle size={18} className="mr-2"/> Enviar confirmación por WhatsApp
+                <MessageCircle size={18} className="mr-2"/> Avisar también por WhatsApp
               </Button>
             </a>
             <Button variant="outline" onClick={() => navigate('home')} className="w-full font-bold">
@@ -811,7 +875,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
                   <option value="Cualquier profesional disponible">✨ Cualquier profesional disponible</option>
                   {matchingStaff.map(s => (
                     <option key={s.id} value={`${s.name} (${s.specialty})`}>
-                      👩‍‍🎨 {s.name} — {s.specialty}
+                      👩‍‍‍🎨 {s.name} — {s.specialty}
                     </option>
                   ))}
                 </select>
@@ -882,7 +946,13 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
             </div>
             <div className="mt-8 flex justify-between">
               <Button variant="ghost" onClick={() => setStep(2)}><ChevronLeft size={18} className="mr-1"/> Volver</Button>
-              <Button onClick={() => setStep(4)}>Revisar Cita <ChevronRight size={18} className="ml-1"/></Button>
+              <Button 
+                onClick={() => setStep(4)} 
+                disabled={!customerName.trim() || !customerPhone.trim()}
+                className={(!customerName.trim() || !customerPhone.trim()) ? 'opacity-50' : ''}
+              >
+                Revisar Cita <ChevronRight size={18} className="ml-1"/>
+              </Button>
             </div>
           </div>
         )}
@@ -897,6 +967,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
               {selectedDate && <p className="text-sm"><strong>Fecha:</strong> {selectedDate}</p>}
               <p className="text-sm"><strong>Horario:</strong> {selectedTime} hrs</p>
               <p className="text-sm"><strong>Clienta:</strong> {customerName || 'Invitada'}</p>
+              <p className="text-sm"><strong>WhatsApp:</strong> +51 {customerPhone}</p>
               <div className="mt-4 pt-3 border-t border-[#C38296]/30 flex justify-between items-center font-bold text-lg text-[#70415D]">
                 <span>Valor Estimado:</span>
                 <span>{selectedService?.price || 'S/ 0'}</span>
@@ -904,7 +975,9 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
             </div>
             <div className="flex justify-between max-w-md mx-auto">
               <Button variant="ghost" onClick={() => setStep(3)}>Modificar</Button>
-              <Button variant="primary" onClick={() => setShowSuccess(true)}>Confirmar Cita</Button>
+              <Button variant="primary" disabled={isSubmitting} onClick={handleConfirmBooking}>
+                {isSubmitting ? 'Registrando...' : 'Confirmar Cita'}
+              </Button>
             </div>
           </div>
         )}
@@ -976,6 +1049,9 @@ interface InvitationsTabProps {
   customers: CustomerItem[];
   onSaveCustomer: (cust: CustomerItem) => Promise<void>;
   onDeleteCustomer: (id: string) => Promise<void>;
+  bookings: BookingItem[];
+  onApproveBooking: (bk: BookingItem) => Promise<void>;
+  onRejectBooking: (id: string) => Promise<void>;
   onSaveSettings: (heroBg: string, cardBg: string) => Promise<void>;
   isCloudSynced: boolean;
 }
@@ -984,12 +1060,17 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
   customCardBg, setCustomCardBg, 
   customHeroBg, setCustomHeroBg,
   customers, onSaveCustomer, onDeleteCustomer,
+  bookings, onApproveBooking, onRejectBooking,
   onSaveSettings, isCloudSynced
 }) => {
   const sortedCustomers = useMemo(() => {
     const baseList = Array.isArray(customers) && customers.length > 0 ? customers : mockInactiveCustomers;
     return [...baseList].sort((a, b) => getEffectiveDays(b) - getEffectiveDays(a));
   }, [customers]);
+
+  const pendingBookings = useMemo(() => {
+    return (Array.isArray(bookings) ? bookings : []).filter(b => b.status === 'pending');
+  }, [bookings]);
 
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem>(ANTI_SPAM_TEMPLATES[0]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(sortedCustomers[0]?.id || 'c1');
@@ -1179,7 +1260,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
       phone: customerForm.phone.trim(),
       service: customerForm.service.trim(),
       lastVisit: customerForm.lastVisit.trim(),
-      days: Number(customerForm.days) || 30
+      days: Number(customerForm.days) || 0
     };
     await onSaveCustomer(newCustomerObj);
     setSelectedCustomerId(newId);
@@ -1193,7 +1274,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
           <span className={`w-3 h-3 rounded-full ${isCloudSynced ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
           <span className="text-xs font-bold text-[#342A30]">
             {isCloudSynced 
-              ? "Warmi T'ika | Beauty Studio Cloud (Firebase): Tus clientas, personal, fondos y servicios se guardan automáticamente." 
+              ? "Warmi T'ika | Beauty Studio Cloud (Firebase): Tus reservas web, clientas, personal y servicios se guardan automáticamente." 
               : "Conectando con Firebase..."}
           </span>
         </div>
@@ -1204,6 +1285,73 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
         >
           <Plus size={15} className="mr-1"/> Agregar Nueva Clienta
         </Button>
+      </div>
+
+      {/* BANDEJA DE SOLICITUDES DE RESERVA ENTRANTES DESDE LA WEB */}
+      <div className="bg-gradient-to-r from-[#FFF8F5] to-white p-6 rounded-2xl shadow-md border-2 border-[#70415D]/35">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-[#C38296]/30 pb-3">
+          <div>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-[#70415D] text-white px-3 py-1 rounded-full mb-1.5">
+              <Bell size={13} /> Filtro Anti-Curiosos • Solicitudes de Citas Web ({pendingBookings.length})
+            </span>
+            <h3 className="font-serif text-xl text-[#70415D]">
+              Reservas Web Pendientes de Confirmar o Denegar
+            </h3>
+            <p className="text-xs text-gray-600 mt-0.5">
+              Cuando una clienta se registra en la web aparece aquí. Si le das a <strong>&quot;Confirmar y Dar Bienvenida&quot;</strong>, pasa automáticamente a tu base de datos de clientas y se abre WhatsApp con un mensaje familiar agradeciendo su preferencia. Si es alguien que entró a molestar, dale a <strong>&quot;Denegar&quot;</strong>.
+            </p>
+          </div>
+        </div>
+
+        {pendingBookings.length === 0 ? (
+          <div className="bg-white/80 rounded-xl p-5 text-center border border-[#C38296]/20 text-xs text-gray-500">
+            🌸 No tienes solicitudes pendientes por revisar en este momento. Cuando alguien reserve en la web aparecerá aquí al instante.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pendingBookings.map((bk) => (
+              <div 
+                key={bk.id} 
+                className="bg-white p-4 rounded-xl border border-[#C38296]/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+              >
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-base text-[#342A30]">{bk.customerName}</span>
+                    <span className="text-xs font-mono bg-[#FFF8F5] px-2.5 py-0.5 rounded-full text-[#70415D] border border-[#C38296]/40">
+                      📱 +51 {bk.customerPhone}
+                    </span>
+                    <span className="text-[11px] font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">
+                      ⏳ Pendiente de confirmar
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-700">
+                    <strong>Servicio:</strong> {bk.serviceName} ({bk.servicePrice}) • <strong>Especialista:</strong> {bk.staffName}
+                  </p>
+                  <p className="text-xs text-[#879681] font-semibold">
+                    📅 Fecha solicitada: {bk.date} a las {bk.time} hrs
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onApproveBooking(bk)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold bg-[#2e7d5b] hover:bg-[#246649] text-white shadow-md transition-all cursor-pointer"
+                  >
+                    <CheckCircle2 size={15} /> Confirmar, Guardar Clienta y Dar Bienvenida
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRejectBooking(bk.id)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-all cursor-pointer"
+                  >
+                    <XCircle size={15} /> Denegar / Descartar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* TABLA PRIORIZADA ARRIBA: LAS CLIENTAS CON MÁS DÍAS SIN VISITA VAN PRIMERO */}
@@ -1217,7 +1365,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
               <Users size={20} className="text-[#B87583]" /> Clientas con Más Tiempo sin Visita (Van Arriba)
             </h3>
             <p className="text-xs text-gray-600 mt-0.5">
-              Las clientas que tienen más días sin venir aparecen arriba del todo. Al pulsar el botón verde se genera un <strong>mensaje random distinto con su descuento</strong> + su <strong>tarjeta de foto personalizada</strong>.
+              Las clientas que tienen más días sin venir aparecen arriba del todo. Y las clientas cuya cita acabas de confirmar entran automáticamente a esta base de datos.
             </p>
           </div>
           <Button variant="primary" onClick={() => handleOpenCustomerModal()} className="!py-2 !px-4 text-xs font-bold shrink-0">
@@ -1241,6 +1389,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
                 const isSelected = cust.id === selectedCustomer?.id;
                 const effectiveDays = getEffectiveDays(cust);
                 const isUrgent = effectiveDays >= 30;
+                const isRecent = effectiveDays === 0;
                 return (
                   <tr 
                     key={cust.id} 
@@ -1252,7 +1401,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
                   >
                     <td className="p-3.5 flex items-center gap-2.5">
                       <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${
-                        isUrgent ? 'bg-[#70415D] text-white shadow-sm' : 'bg-gray-200 text-gray-700'
+                        isUrgent ? 'bg-[#70415D] text-white shadow-sm' : isRecent ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-700'
                       }`}>
                         #{idx + 1}
                       </span>
@@ -1264,13 +1413,19 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
                     <td className="p-3.5 text-gray-600 font-mono text-xs">+51 {cust.phone}</td>
                     <td className="p-3.5 text-gray-600">{cust.service}</td>
                     <td className="p-3.5">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
-                        isUrgent 
-                          ? 'bg-rose-100 text-rose-800 border border-rose-300' 
-                          : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        🔥 Hace {effectiveDays} días
-                      </span>
+                      {isRecent ? (
+                        <span className="px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          🌸 Cita Confirmada (0 días)
+                        </span>
+                      ) : (
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
+                          isUrgent 
+                            ? 'bg-rose-100 text-rose-800 border border-rose-300' 
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          🔥 Hace {effectiveDays} días
+                        </span>
+                      )}
                     </td>
                     <td className="p-3.5 text-right" onClick={e => e.stopPropagation()}>
                       <div className="inline-flex items-center justify-end gap-1.5">
@@ -1663,6 +1818,9 @@ interface AdminDashboardProps {
   staffList: StaffItem[];
   onSaveStaff: (st: StaffItem) => Promise<void>;
   onDeleteStaff: (id: string) => Promise<void>;
+  bookings: BookingItem[];
+  onApproveBooking: (bk: BookingItem) => Promise<void>;
+  onRejectBooking: (id: string) => Promise<void>;
   customHeroBg: string;
   setCustomHeroBg: (val: string) => void;
   customCardBg: string;
@@ -1675,6 +1833,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onLogout, services, onSaveService, onDeleteService,
   customers, onSaveCustomer, onDeleteCustomer,
   staffList, onSaveStaff, onDeleteStaff,
+  bookings, onApproveBooking, onRejectBooking,
   customHeroBg, setCustomHeroBg, customCardBg, setCustomCardBg,
   onSaveSettings, isCloudSynced
 }) => {
@@ -1700,6 +1859,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const safeServices = Array.isArray(services) ? services : [];
   const safeStaff = Array.isArray(staffList) ? staffList : [];
+  const safeBookings = Array.isArray(bookings) ? bookings : [];
+  const pendingCount = safeBookings.filter(b => b.status === 'pending').length;
 
   const handleOpenForm = (service: ServiceItem | null = null) => {
     if (service) {
@@ -1780,11 +1941,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <nav className="space-y-2">
             <button 
               onClick={() => setActiveTab('invitations')} 
-              className={`w-full flex items-center p-3 rounded-xl text-sm font-bold transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between p-3 rounded-xl text-sm font-bold transition-colors cursor-pointer ${
                 activeTab === 'invitations' ? 'bg-[#70415D] text-white' : 'text-gray-300 hover:bg-white/10'
               }`}
             >
-              <MessageCircle size={18} className="mr-3"/> Invitaciones y Clientas
+              <span className="flex items-center">
+                <MessageCircle size={18} className="mr-3"/> Citas y Clientas
+              </span>
+              {pendingCount > 0 && (
+                <span className="px-2 py-0.5 text-xs bg-rose-500 text-white rounded-full">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+            <button 
+              onClick={() => setActiveTab('bookings')} 
+              className={`w-full flex items-center justify-between p-3 rounded-xl text-sm font-bold transition-colors cursor-pointer ${
+                activeTab === 'bookings' ? 'bg-[#70415D] text-white' : 'text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              <span className="flex items-center">
+                <Calendar size={18} className="mr-3"/> Historial de Reservas
+              </span>
+              {pendingCount > 0 && (
+                <span className="px-2 py-0.5 text-xs bg-amber-500 text-white rounded-full">
+                  {pendingCount}
+                </span>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab('staff')} 
@@ -1822,9 +2005,91 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             customers={customers}
             onSaveCustomer={onSaveCustomer}
             onDeleteCustomer={onDeleteCustomer}
+            bookings={bookings}
+            onApproveBooking={onApproveBooking}
+            onRejectBooking={onRejectBooking}
             onSaveSettings={onSaveSettings}
             isCloudSynced={isCloudSynced}
           />
+        )}
+
+        {activeTab === 'bookings' && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#C38296]/30">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#879681]">
+                Control de Citas Web
+              </span>
+              <h2 className="text-2xl font-serif text-[#70415D] mt-1">
+                Todas las Solicitudes de Reserva — Warmi T&apos;ika | Beauty Studio
+              </h2>
+              <p className="text-xs text-gray-600 mt-1">
+                Confirma las citas reales para pasarlas automáticamente a tu base de datos de clientas y enviarles un saludo familiar por WhatsApp, o descarta las solicitudes falsas.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-[#FFF8F5] border-b text-xs text-[#70415D] uppercase font-bold">
+                    <th className="p-4">Clienta / WhatsApp</th>
+                    <th className="p-4">Servicio y Especialista</th>
+                    <th className="p-4">Fecha y Hora</th>
+                    <th className="p-4">Estado</th>
+                    <th className="p-4 text-right">Confirmar o Denegar</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {safeBookings.map((bk) => (
+                    <tr key={bk.id} className="hover:bg-gray-50">
+                      <td className="p-4">
+                        <span className="font-bold text-[#342A30] block">{bk.customerName}</span>
+                        <span className="text-xs font-mono text-gray-500">+51 {bk.customerPhone}</span>
+                      </td>
+                      <td className="p-4">
+                        <span className="font-bold text-[#70415D] block">{bk.serviceName}</span>
+                        <span className="text-xs text-gray-500">{bk.staffName}</span>
+                      </td>
+                      <td className="p-4 text-xs font-semibold text-gray-700">
+                        {bk.date} • {bk.time} hrs
+                      </td>
+                      <td className="p-4">
+                        {bk.status === 'confirmed' ? (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                            ✅ Confirmada y en Base de Datos
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                            ⏳ Pendiente
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <button
+                          onClick={() => onApproveBooking(bk)}
+                          className="inline-flex items-center gap-1 px-3.5 py-2 rounded-full text-xs font-bold bg-[#2e7d5b] hover:bg-[#246649] text-white shadow-sm cursor-pointer"
+                        >
+                          <CheckCircle2 size={14} /> {bk.status === 'confirmed' ? 'Reenviar Bienvenida' : 'Confirmar y Dar Bienvenida'}
+                        </button>
+                        <button
+                          onClick={() => onRejectBooking(bk.id)}
+                          className="inline-flex items-center gap-1 px-3 py-2 rounded-full text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 cursor-pointer"
+                        >
+                          <Trash2 size={14} /> Denegar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {safeBookings.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-gray-500 text-sm">
+                        Aún no hay reservas registradas desde la web.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
 
         {activeTab === 'staff' && (
@@ -2075,6 +2340,7 @@ export default function App() {
   const [services, setServices] = useState<ServiceItem[]>(initialMockServices);
   const [customers, setCustomers] = useState<CustomerItem[]>(mockInactiveCustomers);
   const [staffList, setStaffList] = useState<StaffItem[]>(initialMockStaff);
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [selectedServiceFromHome, setSelectedServiceFromHome] = useState<ServiceItem | null>(null);
   const [customHeroBg, setCustomHeroBg] = useState(DEFAULT_HERO_BG);
   const [customCardBg, setCustomCardBg] = useState(DEFAULT_CARD_BG);
@@ -2169,6 +2435,16 @@ export default function App() {
       (err) => console.error("Error leyendo personal:", err)
     );
 
+    const bookingsCol = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
+    const unsubBookings = onSnapshot(
+      bookingsCol,
+      (snapshot) => {
+        const loadedBookings = snapshot.docs.map(d => d.data() as BookingItem);
+        setBookings(loadedBookings);
+      },
+      (err) => console.error("Error leyendo reservas:", err)
+    );
+
     const settingsDoc = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'theme');
     const unsubSettings = onSnapshot(
       settingsDoc,
@@ -2188,6 +2464,7 @@ export default function App() {
       unsubServices();
       unsubCustomers();
       unsubStaff();
+      unsubBookings();
       unsubSettings();
     };
   }, [user]);
@@ -2213,6 +2490,72 @@ export default function App() {
         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', customerId));
       } catch (e) {
         console.error("Error eliminando clienta:", e);
+      }
+    }
+  };
+
+  const handleCreateBooking = async (bookingObj: BookingItem) => {
+    setBookings(prev => [bookingObj, ...prev]);
+    if (user && db) {
+      try {
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', bookingObj.id), bookingObj);
+      } catch (e) {
+        console.error("Error guardando reserva web:", e);
+      }
+    }
+  };
+
+  // Confirma la cita, agrega/actualiza a la clienta en la base de datos y abre WhatsApp con mensaje familiar
+  const handleApproveBooking = async (bookingObj: BookingItem) => {
+    const cleanBookingPhone = bookingObj.customerPhone.replace(/\D/g, '');
+    const existingCust = customers.find(
+      c => c.phone.replace(/\D/g, '') === cleanBookingPhone || c.name.toLowerCase() === bookingObj.customerName.toLowerCase()
+    );
+
+    const customerRecord: CustomerItem = {
+      id: existingCust ? existingCust.id : `c${Date.now()}`,
+      name: bookingObj.customerName,
+      phone: cleanBookingPhone,
+      service: bookingObj.serviceName,
+      lastVisit: bookingObj.date || new Date().toLocaleDateString('es-PE'),
+      days: 0
+    };
+
+    await handleSaveCustomer(customerRecord);
+
+    const updatedBooking: BookingItem = { ...bookingObj, status: 'confirmed' };
+    setBookings(prev => prev.map(b => b.id === bookingObj.id ? updatedBooking : b));
+    if (user && db) {
+      try {
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', bookingObj.id), updatedBooking);
+      } catch (e) {
+        console.error("Error actualizando estado de reserva:", e);
+      }
+    }
+
+    const firstName = bookingObj.customerName.trim().split(' ')[0] || 'Hermosa';
+    const randomWelcomeFn = WARM_WELCOME_MESSAGES[Math.floor(Math.random() * WARM_WELCOME_MESSAGES.length)];
+    const warmMessage = randomWelcomeFn(
+      firstName,
+      bookingObj.serviceName,
+      bookingObj.date,
+      bookingObj.time,
+      bookingObj.staffName
+    );
+
+    const fullPhone = cleanBookingPhone.startsWith('51') ? cleanBookingPhone : `51${cleanBookingPhone}`;
+    const waUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(warmMessage)}`;
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // Deniega y elimina la solicitud falsa sin agregarla a la base de datos de clientas
+  const handleRejectBooking = async (bookingId: string) => {
+    setBookings(prev => prev.filter(b => b.id !== bookingId));
+    if (user && db) {
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', bookingId));
+      } catch (e) {
+        console.error("Error eliminando reserva:", e);
       }
     }
   };
@@ -2285,6 +2628,8 @@ export default function App() {
     setCurrentRoute('catalog');
   };
 
+  const pendingBookingsCount = bookings.filter(b => b.status === 'pending').length;
+
   if (currentRoute === 'admin') {
     if (!isAdminAuth) {
       return <AdminLogin onLogin={() => setIsAdminAuth(true)} onBack={() => setCurrentRoute('home')} />;
@@ -2301,6 +2646,9 @@ export default function App() {
         staffList={staffList}
         onSaveStaff={handleSaveStaff}
         onDeleteStaff={handleDeleteStaff}
+        bookings={bookings}
+        onApproveBooking={handleApproveBooking}
+        onRejectBooking={handleRejectBooking}
         customHeroBg={customHeroBg}
         setCustomHeroBg={setCustomHeroBg}
         customCardBg={customCardBg}
@@ -2313,7 +2661,12 @@ export default function App() {
 
   return (
     <div className="font-sans text-[#342A30] flex flex-col min-h-screen bg-[#FFF8F5]">
-      <PublicNavbar navigate={setCurrentRoute} activeRoute={currentRoute} isCloudSynced={isCloudSynced} />
+      <PublicNavbar 
+        navigate={setCurrentRoute} 
+        activeRoute={currentRoute} 
+        isCloudSynced={isCloudSynced} 
+        pendingBookingsCount={pendingBookingsCount}
+      />
       
       <main className="flex-1 flex flex-col w-full">
         {currentRoute === 'home' && (
@@ -2333,7 +2686,12 @@ export default function App() {
           />
         )}
         {currentRoute === 'booking' && (
-          <BookingFlow navigate={setCurrentRoute} services={services} staffList={staffList} />
+          <BookingFlow 
+            navigate={setCurrentRoute} 
+            services={services} 
+            staffList={staffList} 
+            onCreateBooking={handleCreateBooking}
+          />
         )}
       </main>
 
