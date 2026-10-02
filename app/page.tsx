@@ -187,9 +187,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
 
 const initialMockServices: ServiceItem[] = [
   { id: 's1', category: 'Cabello', name: 'Balayage Iluminado', price: 'Desde S/ 150', duration: '180 min', image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=600', description: 'Técnica de coloración a mano alzada para un acabado natural, suave y luminoso.' },
-  { id: 's2', category: 'Cabello', name: 'Corte Boutique + Spa Capilar', price: 'S/ 60', duration: '60 min', image: 'https://images.unsplash.com/photo-1595476108010-b4d1f10d5e43?auto=format&fit=crop&q=80&w=600', description: 'Asesoría de imagen personalizada, lavado con hidratación botánica, corte y brushing profesional.' },
-  { id: 's3', category: 'Uñas', name: 'Manicure Acrílica Floral', price: 'S/ 80', duration: '90 min', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059e98b?auto=format&fit=crop&q=80&w=600', description: 'Extensión esculpida, limpieza profunda de cutículas y esmaltado en gel de larga duración.' },
-  { id: 's4', category: 'Uñas', name: 'Pedicure Spa Botánico', price: 'S/ 50', duration: '60 min', image: 'https://images.unsplash.com/photo-1516975080661-460d3fcb640c?auto=format&fit=crop&q=80&w=600', description: 'Exfoliación con sales florales, masaje relajante e hidratación profunda.' },
+  { id: 's2', category: 'Cabello', name: 'Corte Boutique + Tratamiento Capilar', price: 'S/ 60', duration: '60 min', image: 'https://images.unsplash.com/photo-1595476108010-b4d1f10d5e43?auto=format&fit=crop&q=80&w=600', description: 'Asesoría de imagen personalizada, lavado con hidratación profunda, corte y brushing profesional.' },
+  { id: 's3', category: 'Uñas', name: 'Manicure Acrílica Boutique', price: 'S/ 80', duration: '90 min', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059e98b?auto=format&fit=crop&q=80&w=600', description: 'Extensión esculpida, limpieza profunda de cutículas y esmaltado en gel de larga duración.' },
+  { id: 's4', category: 'Uñas', name: 'Pedicure Boutique', price: 'S/ 50', duration: '60 min', image: 'https://images.unsplash.com/photo-1516975080661-460d3fcb640c?auto=format&fit=crop&q=80&w=600', description: 'Exfoliación renovadora, masaje relajante e hidratación profunda.' },
   { id: 's5', category: 'Cejas', name: 'Laminado + Diseño de Cejas', price: 'S/ 50', duration: '45 min', image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=600', description: 'Fijación orgánica del vello para lograr cejas definidas, armoniosas y con volumen.' },
   { id: 's6', category: 'Pestañas', name: 'Lifting Nutritivo + Tinte', price: 'S/ 60', duration: '60 min', image: 'https://images.unsplash.com/photo-1583001931096-959e9a1a6223?auto=format&fit=crop&q=80&w=600', description: 'Realza tu mirada con una curvatura natural y keratina fortalecedora para tus pestañas.' },
   { id: 's7', category: 'Labios', name: 'Hidratación de Rosas y Ácido Hialurónico', price: 'S/ 40', duration: '30 min', image: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&q=80&w=600', description: 'Velo nutritivo y regenerador para devolver la suavidad y frescura a los labios.' }
@@ -207,26 +207,26 @@ const mockInactiveCustomers: CustomerItem[] = [
 ];
 
 const ANTI_SPAM_TEMPLATES: TemplateItem[] = [
-  { id: 't1', name: '1. Cariño floral y días exactos', content: "Hola {{nombre}} 🌷 ¡Qué lindo saludarte! Vimos que ya pasaron {{dias}} días desde tu visita para {{servicio}} en Warmi T'ika. Te extrañamos y preparamos {{beneficio}} con tu código {{codigo}} (válido hasta el {{fecha_vencimiento}}). ¡Te adjunto tu tarjeta VIP!" },
-  { id: 't2', name: '2. Momento de engreírte', content: "¡Hola, {{nombre}}! 🌸 Hace {{dias}} días tuvimos el gusto de atenderte en Warmi T'ika para tu {{servicio}}. Sabemos que siempre viene bien una pausa entre rosas y calma, así que tienes {{beneficio}} usando el código {{codigo}} hasta el {{fecha_vencimiento}}." },
-  { id: 't3', name: '3. Retoque de tu servicio favorito', content: "Hola {{nombre}} ✨ ¿Cómo has estado? Notamos que hace {{dias}} días te realizaste {{servicio}} con nosotras. Para que vuelvas a lucir radiante en Warmi T'ika, te regalamos {{beneficio}} con el código {{codigo}}." },
-  { id: 't4', name: '4. Invitación especial de temporada', content: "Querida {{nombre}} 🌺 Pasaron {{dias}} días desde la última vez que nos visitaste en Warmi T'ika para tu {{servicio}}. Queremos volver a consentirte como mereces con {{beneficio}} especial para ti (Código: {{codigo}})." },
-  { id: 't5', name: '5. Pausa de belleza boutique', content: "Hola {{nombre}} 🌷 En Warmi T'ika nos encantará volver a recibirte después de estos {{dias}} días sin verte. Te dejamos aquí tu tarjeta con {{beneficio}} (código {{codigo}}) para que agendes tu próximo momento de relax." },
-  { id: 't6', name: '6. Saludo cálido y beneficio VIP', content: "¡Hola {{nombre}}! 🌸 Qué alegría escribirte. Ya son {{dias}} días sin verte por el salón luego de tu {{servicio}}. Tenemos listo para ti {{beneficio}} con el código {{codigo}} hasta el {{fecha_vencimiento}}." },
-  { id: 't7', name: '7. Tu espacio entre flores te espera', content: "Hola, {{nombre}} 💐 Tu rincón favorito en Warmi T'ika te espera. Como han pasado {{dias}} días desde tu última cita de {{servicio}}, queremos obsequiarte {{beneficio}} presentando esta tarjetita con el código {{codigo}}." },
-  { id: 't8', name: '8. Renueva tu estilo con nosotras', content: "¡Buen día, {{nombre}}! 🌷 Hace {{dias}} días compartimos tu sesión de {{servicio}}. Cuando quieras renovar tu look o relajarte, cuentas con {{beneficio}} exclusivo en Warmi T'ika (código: {{codigo}})." },
-  { id: 't9', name: '9. Detalle exclusivo por fidelidad', content: "Hola {{nombre}} ✨ Gracias por confiar en Warmi T'ika hace {{dias}} días para tu {{servicio}}. Como detalle especial para tu regreso, activamos {{beneficio}} a tu nombre con el código {{codigo}}." },
+  { id: 't1', name: '1. Cariño y días exactos', content: "Hola {{nombre}} 🌷 ¡Qué lindo saludarte! Vimos que ya pasaron {{dias}} días desde tu visita para {{servicio}} en Warmi T'ika Beauty Studio. Te extrañamos y preparamos {{beneficio}} con tu código {{codigo}} (válido hasta el {{fecha_vencimiento}}). ¡Te adjunto tu tarjeta VIP!" },
+  { id: 't2', name: '2. Momento de engreírte', content: "¡Hola, {{nombre}}! 🌸 Hace {{dias}} días tuvimos el gusto de atenderte en Warmi T'ika Beauty Studio para tu {{servicio}}. Sabemos que siempre viene bien una pausa para ti, así que tienes {{beneficio}} usando el código {{codigo}} hasta el {{fecha_vencimiento}}." },
+  { id: 't3', name: '3. Retoque de tu servicio favorito', content: "Hola {{nombre}} ✨ ¿Cómo has estado? Notamos que hace {{dias}} días te realizaste {{servicio}} con nosotras. Para que vuelvas a lucir radiante en Warmi T'ika Beauty Studio, te regalamos {{beneficio}} con el código {{codigo}}." },
+  { id: 't4', name: '4. Invitación especial de temporada', content: "Querida {{nombre}} 🌺 Pasaron {{dias}} días desde la última vez que nos visitaste en Warmi T'ika Beauty Studio para tu {{servicio}}. Queremos volver a consentirte como mereces con {{beneficio}} especial para ti (Código: {{codigo}})." },
+  { id: 't5', name: '5. Pausa de belleza en el estudio', content: "Hola {{nombre}} 🌷 En Warmi T'ika Beauty Studio nos encantará volver a recibirte después de estos {{dias}} días sin verte. Te dejamos aquí tu tarjeta con {{beneficio}} (código {{codigo}}) para que agendes tu próximo momento de cuidado." },
+  { id: 't6', name: '6. Saludo cálido y beneficio VIP', content: "¡Hola {{nombre}}! 🌸 Qué alegría escribirte. Ya son {{dias}} días sin verte por el estudio luego de tu {{servicio}}. Tenemos listo para ti {{beneficio}} con el código {{codigo}} hasta el {{fecha_vencimiento}}." },
+  { id: 't7', name: '7. Tu espacio favorito te espera', content: "Hola, {{nombre}} 💐 Tu rincón favorito en Warmi T'ika Beauty Studio te espera. Como han pasado {{dias}} días desde tu última cita de {{servicio}}, queremos obsequiarte {{beneficio}} presentando esta tarjetita con el código {{codigo}}." },
+  { id: 't8', name: '8. Renueva tu estilo con nosotras', content: "¡Buen día, {{nombre}}! 🌷 Hace {{dias}} días compartimos tu sesión de {{servicio}}. Cuando quieras renovar tu look o relajarte, cuentas con {{beneficio}} exclusivo en Warmi T'ika Beauty Studio (código: {{codigo}})." },
+  { id: 't9', name: '9. Detalle exclusivo por fidelidad', content: "Hola {{nombre}} ✨ Gracias por confiar en Warmi T'ika Beauty Studio hace {{dias}} días para tu {{servicio}}. Como detalle especial para tu regreso, activamos {{beneficio}} a tu nombre con el código {{codigo}}." },
   { id: 't10', name: '10. Recordatorio amable de cuidado', content: "Hola, {{nombre}} 🌸 ¡Esperamos que estés súper bien! Ya cumplimos {{dias}} días desde tu último {{servicio}}. Te enviamos esta invitación con {{beneficio}} (código {{codigo}}) para cuando gustes visitarnos." },
-  { id: 't11', name: '11. Café, flores y belleza', content: "¡Hola {{nombre}}! 🌷 Hace {{dias}} días que no coincidimos en Warmi T'ika. Te esperamos con la mejor atención y {{beneficio}} especial para ti usando el código {{codigo}} antes del {{fecha_vencimiento}}." },
+  { id: 't11', name: '11. Experiencia Beauty Studio', content: "¡Hola {{nombre}}! 🌷 Hace {{dias}} días que no coincidimos en Warmi T'ika Beauty Studio. Te esperamos con la mejor atención y {{beneficio}} especial para ti usando el código {{codigo}} antes del {{fecha_vencimiento}}." },
   { id: 't12', name: '12. Regalo personalizado Warmi T\'ika', content: "Querida {{nombre}} 🌺 Preparamos esta tarjeta personalizada porque hace {{dias}} días no te vemos por el estudio desde tu {{servicio}}. Disfruta de {{beneficio}} en tu próxima reserva con el código {{codigo}}." },
-  { id: 't13', name: '13. Brillo y renovación', content: "Hola {{nombre}} ✨ ¿Lista para un día de spa floral? Pasaron {{dias}} días desde tu {{servicio}} en Warmi T'ika y queremos engreírte con {{beneficio}} (Código: {{codigo}})." },
-  { id: 't14', name: '14. Invitación dulce sin presiones', content: "Hola, {{nombre}} 🌸 Te saludamos con mucho cariño desde Warmi T'ika. Vimos que hace {{dias}} días nos visitaste para {{servicio}} y te dejamos {{beneficio}} con el código {{codigo}} para cuando te provoque regresar." },
-  { id: 't15', name: '15. Cuidado para ti', content: "¡Hola {{nombre}}! 🌷 Mereces un momento solo para ti. Después de {{dias}} días de tu última visita, en Warmi T'ika te regalamos {{beneficio}} con tu código personal {{codigo}}." },
-  { id: 't16', name: '16. Especialista lista para atenderte', content: "Hola {{nombre}} 💐 Nuestro equipo de Warmi T'ika te recuerda con mucho cariño tras {{dias}} días de tu {{servicio}}. Usa esta tarjeta con {{beneficio}} (código {{codigo}}) en tu próxima cita." },
-  { id: 't17', name: '17. Tardes de belleza en el estudio', content: "¡Hola, {{nombre}}! 🌸 Ya van {{dias}} días desde que estuviste en Warmi T'ika. Si deseas agendar esta semana, tienes activo {{beneficio}} con el código {{codigo}} hasta el {{fecha_vencimiento}}." },
-  { id: 't18', name: '18. Mimo floral garantizado', content: "Hola {{nombre}} 🌷 Queremos que vuelvas a vivir la experiencia Warmi T'ika. Como pasaron {{dias}} días desde tu última atención de {{servicio}}, tienes {{beneficio}} listo con el código {{codigo}}." },
-  { id: 't19', name: '19. Tu tarjeta de descuento personal', content: "¡Hola {{nombre}}! ✨ Te adjuntamos tu pase especial de Warmi T'ika. Hace {{dias}} días realizamos tu {{servicio}} y hoy tienes {{beneficio}} exclusivo con el código {{codigo}}." },
-  { id: 't20', name: '20. Mensaje corto y directo anti-spam', content: "Hola {{nombre}} 🌸 ¡Te esperamos en Warmi T'ika! Ya pasaron {{dias}} días desde tu visita de {{servicio}} y tienes {{beneficio}} disponible con el código {{codigo}} (vence el {{fecha_vencimiento}})." }
+  { id: 't13', name: '13. Brillo y renovación', content: "Hola {{nombre}} ✨ ¿Lista para engreírte hoy? Pasaron {{dias}} días desde tu {{servicio}} en Warmi T'ika Beauty Studio y queremos consentirte con {{beneficio}} (Código: {{codigo}})." },
+  { id: 't14', name: '14. Invitación dulce sin presiones', content: "Hola, {{nombre}} 🌸 Te saludamos con mucho cariño desde Warmi T'ika Beauty Studio. Vimos que hace {{dias}} días nos visitaste para {{servicio}} y te dejamos {{beneficio}} con el código {{codigo}} para cuando te provoque regresar." },
+  { id: 't15', name: '15. Cuidado para ti', content: "¡Hola {{nombre}}! 🌷 Mereces un momento solo para ti. Después de {{dias}} días de tu última visita, en Warmi T'ika Beauty Studio te regalamos {{beneficio}} con tu código personal {{codigo}}." },
+  { id: 't16', name: '16. Especialista lista para atenderte', content: "Hola {{nombre}} 💐 Nuestro equipo de Warmi T'ika Beauty Studio te recuerda con mucho cariño tras {{dias}} días de tu {{servicio}}. Usa esta tarjeta con {{beneficio}} (código {{codigo}}) en tu próxima cita." },
+  { id: 't17', name: '17. Tardes de belleza en el estudio', content: "¡Hola, {{nombre}}! 🌸 Ya van {{dias}} días desde que estuviste en Warmi T'ika Beauty Studio. Si deseas agendar esta semana, tienes activo {{beneficio}} con el código {{codigo}} hasta el {{fecha_vencimiento}}." },
+  { id: 't18', name: '18. Mimo garantizado', content: "Hola {{nombre}} 🌷 Queremos que vuelvas a vivir la experiencia Warmi T'ika Beauty Studio. Como pasaron {{dias}} días desde tu última atención de {{servicio}}, tienes {{beneficio}} listo con el código {{codigo}}." },
+  { id: 't19', name: '19. Tu tarjeta de descuento personal', content: "¡Hola {{nombre}}! ✨ Te adjuntamos tu pase especial de Warmi T'ika Beauty Studio. Hace {{dias}} días realizamos tu {{servicio}} y hoy tienes {{beneficio}} exclusivo con el código {{codigo}}." },
+  { id: 't20', name: '20. Mensaje corto y directo anti-spam', content: "Hola {{nombre}} 🌸 ¡Te esperamos en Warmi T'ika Beauty Studio! Ya pasaron {{dias}} días desde tu visita de {{servicio}} y tienes {{beneficio}} disponible con el código {{codigo}} (vence el {{fecha_vencimiento}})." }
 ];
 
 interface CardBlobParams {
@@ -325,7 +325,7 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
 
   ctx.fillStyle = '#342A30';
   ctx.font = '26px sans-serif';
-  ctx.fillText(`Hace ${days || 30} días te atendimos en ${service || 'nuestro salón'}`, 540, 555);
+  ctx.fillText(`Hace ${days || 30} días te atendimos en ${service || 'nuestro estudio'}`, 540, 555);
 
   const pillGrad = ctx.createLinearGradient(240, 600, 840, 710);
   pillGrad.addColorStop(0, '#70415D');
@@ -356,7 +356,7 @@ const generateInvitationCardBlob = async ({ customerFirstName, benefit, code, da
 
   ctx.fillStyle = '#879681';
   ctx.font = '20px sans-serif';
-  ctx.fillText("Warmi T'ika • Presenta esta tarjeta por WhatsApp • Válido hasta el 30/10/2026", 540, 925);
+  ctx.fillText("Warmi T'ika Beauty Studio • Presenta esta tarjeta por WhatsApp • Válido hasta el 30/10/2026", 540, 925);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
@@ -431,7 +431,7 @@ const HomeView: React.FC<HomeViewProps> = ({ navigate, services, customHeroBg, o
         
         <div className="max-w-3xl mx-auto text-center relative z-10 bg-[#FFF8F5]/80 backdrop-blur-md p-8 md:p-12 rounded-3xl border-2 border-[#B87583]/40 shadow-2xl">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-[#B87583]/40 text-[#70415D] text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
-            <Flower2 size={15} className="text-[#B87583]" /> Salón Boutique & Spa Floral <Flower2 size={15} className="text-[#879681]" />
+            <Flower2 size={15} className="text-[#B87583]" /> Warmi T&apos;ika • Beauty Studio <Flower2 size={15} className="text-[#879681]" />
           </div>
 
           <div className="flex justify-center mb-6">
@@ -444,7 +444,7 @@ const HomeView: React.FC<HomeViewProps> = ({ navigate, services, customHeroBg, o
           </h1>
 
           <p className="text-base md:text-lg text-[#342A30]/90 mb-10 max-w-xl mx-auto leading-relaxed font-medium">
-            Sumérgete en un ambiente rodeado de rosas, naturaleza y calma. En <strong>Warmi T&apos;ika</strong> cuidamos cada detalle para realzar tu belleza natural.
+            Sumérgete en un ambiente exclusivo de cuidado y calma. En <strong>Warmi T&apos;ika Beauty Studio</strong> cuidamos cada detalle para realzar tu belleza natural.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -452,7 +452,7 @@ const HomeView: React.FC<HomeViewProps> = ({ navigate, services, customHeroBg, o
               Reservar mi cita <ChevronRight size={20} className="ml-2"/>
             </Button>
             <a 
-              href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika,%20deseo%20informaci%C3%B3n%20para%20una%20cita" 
+              href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika%20Beauty%20Studio,%20deseo%20informaci%C3%B3n%20para%20una%20cita" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="w-full sm:w-auto"
@@ -512,7 +512,7 @@ const HomeView: React.FC<HomeViewProps> = ({ navigate, services, customHeroBg, o
 
           <div className="mt-12 text-center">
             <Button variant="outline" onClick={() => navigate('catalog')} className="font-bold !px-8">
-              Ver todo el catálogo floral
+              Ver todo el catálogo de servicios
             </Button>
           </div>
         </div>
@@ -554,7 +554,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({ navigate, services, initialSe
     <div className="max-w-6xl mx-auto px-4 py-12 w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 border-b border-[#C38296]/30 pb-5 gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-[#879681]">Catálogo Boutique — Warmi T&apos;ika</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#879681]">Warmi T&apos;ika | Beauty Studio</span>
           <h1 className="text-3xl md:text-4xl font-serif text-[#70415D] mt-1">Nuestros Servicios</h1>
           <p className="text-gray-600 text-sm mt-1">Toca cualquier tratamiento para ver qué incluye y reservarlo.</p>
         </div>
@@ -654,7 +654,7 @@ const CatalogView: React.FC<CatalogViewProps> = ({ navigate, services, initialSe
                   Reservar este servicio
                 </Button>
                 <a 
-                  href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika, deseo consultar por el servicio: ${selectedService.name}`)}`}
+                  href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika Beauty Studio, deseo consultar por el servicio: ${selectedService.name}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -695,11 +695,11 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
           </div>
           <h2 className="text-3xl font-serif text-[#70415D] mb-3">¡Solicitud Registrada!</h2>
           <p className="text-gray-600 text-sm mb-6">
-            Gracias, <strong>{customerName || 'Hermosa'}</strong>. Hemos reservado tu espacio en <strong>Warmi T&apos;ika</strong> para <strong>{selectedService?.name}</strong>.
+            Gracias, <strong>{customerName || 'Hermosa'}</strong>. Hemos reservado tu espacio en <strong>Warmi T&apos;ika Beauty Studio</strong> para <strong>{selectedService?.name}</strong>.
           </p>
           <div className="flex flex-col gap-3">
             <a
-              href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika 🌸 Soy ${customerName || 'clienta'}, acabo de reservar ${selectedService?.name || 'mi cita'} a las ${selectedTime}.`)}`}
+              href={`https://wa.me/51987654321?text=${encodeURIComponent(`Hola Warmi T'ika Beauty Studio 🌸 Soy ${customerName || 'clienta'}, acabo de reservar ${selectedService?.name || 'mi cita'} a las ${selectedTime}.`)}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -735,7 +735,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
 
         {step === 1 && (
           <div>
-            <h2 className="text-2xl font-serif text-[#70415D] mb-6">1. Elige tu experiencia en Warmi T&apos;ika</h2>
+            <h2 className="text-2xl font-serif text-[#70415D] mb-6">1. Elige tu experiencia en Warmi T&apos;ika Beauty Studio</h2>
             <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
               {safeServices.map((service) => (
                 <div 
@@ -842,7 +842,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services }) => {
 
         {step === 4 && (
           <div className="text-center">
-            <h2 className="text-2xl font-serif text-[#70415D] mb-2">Confirmar tu Reserva en Warmi T&apos;ika</h2>
+            <h2 className="text-2xl font-serif text-[#70415D] mb-2">Confirmar tu Reserva en Warmi T&apos;ika Beauty Studio</h2>
             <p className="text-gray-500 text-sm mb-6">Verifica que los datos estén correctos.</p>
             <div className="bg-[#FFF8F5] p-6 rounded-2xl text-left max-w-md mx-auto mb-8 border border-[#C38296]/40">
               <p className="mb-2 text-sm"><strong>Servicio:</strong> {selectedService?.name || 'Tratamiento'}</p>
@@ -893,7 +893,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
           <Lock size={26} className="text-[#70415D]" />
         </div>
         <Logo className="h-14 mx-auto mb-2 justify-center" />
-        <h2 className="text-lg font-serif text-[#70415D] mb-6">Acceso Administrativo — Warmi T&apos;ika (Clave: admin)</h2>
+        <h2 className="text-lg font-serif text-[#70415D] mb-6">Acceso Administrativo — Warmi T&apos;ika | Beauty Studio (Clave: admin)</h2>
         <form onSubmit={handleSubmit} className="space-y-5 text-left">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Contraseña</label>
@@ -975,7 +975,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
     return (targetTpl.content || '')
       .replace(/\{\{nombre\}\}/g, firstName)
       .replace(/\{\{dias\}\}/g, String(effectiveDays))
-      .replace(/\{\{servicio\}\}/g, targetCust?.service || 'nuestro servicio boutique')
+      .replace(/\{\{servicio\}\}/g, targetCust?.service || 'nuestro servicio')
       .replace(/\{\{beneficio\}\}/g, benefit || '20% de descuento')
       .replace(/\{\{codigo\}\}/g, code || 'WARMI20')
       .replace(/\{\{fecha_vencimiento\}\}/g, '30/10/2026');
@@ -1016,7 +1016,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
         benefit,
         code,
         days: effectiveDays,
-        service: target?.service || 'Salón Boutique',
+        service: target?.service || 'Beauty Studio',
         bgUrl: customCardBg
       });
       if (blob) {
@@ -1061,7 +1061,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
         benefit,
         code,
         days: effectiveDays,
-        service: target.service || 'Salón Boutique',
+        service: target.service || 'Beauty Studio',
         bgUrl: customCardBg
       });
 
@@ -1145,7 +1145,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
           <span className={`w-3 h-3 rounded-full ${isCloudSynced ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
           <span className="text-xs font-bold text-[#342A30]">
             {isCloudSynced 
-              ? "Warmi T'ika Cloud (Firebase): Tus clientas, fondos y servicios se guardan automáticamente en tiempo real." 
+              ? "Warmi T'ika | Beauty Studio Cloud (Firebase): Tus clientas, fondos y servicios se guardan automáticamente." 
               : "Conectando con Firebase..."}
           </span>
         </div>
@@ -1370,7 +1370,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
 
           <div>
             <label className="block text-xs font-bold uppercase text-gray-600 mb-1.5 flex items-center gap-1">
-              <Camera size={15}/> Fondo Floral Cuadrado (1:1) de esta Tarjeta (URL IA)
+              <Camera size={15}/> Fondo Cuadrado (1:1) de esta Tarjeta (URL IA)
             </label>
             <input 
               type="text" 
@@ -1502,7 +1502,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
 
       <div className="bg-[#FFF8F5] p-6 rounded-2xl border border-[#C38296]/40 shadow-sm">
         <h3 className="font-serif text-xl text-[#70415D] mb-2 flex items-center gap-2">
-          <Flower2 size={20} className="text-[#B87583]" /> Fondo Floral Horizontal (16:9) de la Página Web — Warmi T&apos;ika
+          <Flower2 size={20} className="text-[#B87583]" /> Fondo Horizontal (16:9) de la Página Web — Warmi T&apos;ika | Beauty Studio
         </h3>
         <p className="text-xs text-gray-600 mb-4">
           Este es el fondo horizontal de la portada principal de la web (independiente del fondo cuadrado de la tarjeta de descuento):
@@ -1515,7 +1515,7 @@ const InvitationsTab: React.FC<InvitationsTabProps> = ({
               setCustomHeroBg(e.target.value);
               onSaveSettings(e.target.value, customCardBg);
             }}
-            placeholder="Pega aquí la URL de tu fondo floral horizontal para la web..."
+            placeholder="Pega aquí la URL de tu fondo horizontal para la web..."
             className="flex-1 border border-[#C38296] bg-white rounded-xl p-2.5 text-sm outline-none"
           />
           <Button 
@@ -1714,7 +1714,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === 'catalog' && (
           <div className="max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-serif text-[#70415D]">Catálogo de Servicios — Warmi T&apos;ika</h2>
+              <h2 className="text-2xl font-serif text-[#70415D]">Catálogo de Servicios — Warmi T&apos;ika | Beauty Studio</h2>
               <Button variant="primary" onClick={() => handleOpenForm()}>
                 <Plus size={18} className="mr-1"/> Agregar Servicio
               </Button>
@@ -1817,9 +1817,9 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
 
-  // Asegura que la pestaña del navegador siempre diga Warmi T'ika y nunca "Create Next App"
+  // Asegura que la pestaña del navegador siempre diga únicamente "Warmi T'ika | Beauty Studio"
   useEffect(() => {
-    document.title = "Warmi T'ika | Beauty Studio & Spa Floral";
+    document.title = "Warmi T'ika | Beauty Studio";
   }, [currentRoute]);
 
   useEffect(() => {
@@ -2018,7 +2018,7 @@ export default function App() {
       </main>
 
       <a 
-        href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika%20%F0%9F%8C%B7%20Deseo%20agendar%20una%20cita" 
+        href="https://wa.me/51987654321?text=Hola%20Warmi%20T'ika%20Beauty%20Studio%20%F0%9F%8C%B7%20Deseo%20agendar%20una%20cita" 
         target="_blank" 
         rel="noopener noreferrer" 
         className="fixed bottom-6 right-6 bg-[#2e7d5b] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform z-50 border-2 border-white flex items-center gap-2"
@@ -2031,7 +2031,7 @@ export default function App() {
           <div>
             <Logo className="h-16 mb-3" color="white" />
             <p className="text-gray-300 text-sm">
-              <strong>Warmi T&apos;ika</strong> — Un salón boutique rodeado de flores y calma, diseñado para resaltar tu belleza.
+              <strong>Warmi T&apos;ika | Beauty Studio</strong> — Un estudio exclusivo diseñado para resaltar tu belleza natural.
             </p>
           </div>
           <div className="space-y-2 text-sm text-gray-300">
