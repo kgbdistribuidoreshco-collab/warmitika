@@ -875,7 +875,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({ navigate, services, staffList
                   <option value="Cualquier profesional disponible">✨ Cualquier profesional disponible</option>
                   {matchingStaff.map(s => (
                     <option key={s.id} value={`${s.name} (${s.specialty})`}>
-                      👩‍‍‍🎨 {s.name} — {s.specialty}
+                      👩🎨 {s.name} — {s.specialty}
                     </option>
                   ))}
                 </select>
@@ -997,7 +997,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin') {
+    if (password === 'w@rmitika') {
       onLogin();
     } else {
       setError(true);
@@ -1015,20 +1015,20 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack }) => {
           <Lock size={26} className="text-[#70415D]" />
         </div>
         <Logo className="h-14 mx-auto mb-2 justify-center" />
-        <h2 className="text-lg font-serif text-[#70415D] mb-6">Acceso Administrativo — Warmi T&apos;ika | Beauty Studio (Clave: admin)</h2>
+        <h2 className="text-lg font-serif text-[#70415D] mb-6">Acceso Administrativo — Warmi T&apos;ika | Beauty Studio</h2>
         <form onSubmit={handleSubmit} className="space-y-5 text-left">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Contraseña</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Contraseña de Administrador</label>
             <input 
               type="password" 
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(false); }}
-              placeholder="Escribe: admin" 
+              placeholder="Ingresa tu clave privada..." 
               className={`w-full border rounded-xl p-3 outline-none ${error ? 'border-red-500 bg-red-50' : 'border-[#C38296]/50'}`}
             />
             {error && (
               <p className="text-red-600 text-xs mt-2 font-bold flex items-center">
-                <AlertCircle size={14} className="mr-1"/> Clave incorrecta. Usa &quot;admin&quot;.
+                <AlertCircle size={14} className="mr-1"/> Contraseña incorrecta. Inténtalo nuevamente.
               </p>
             )}
           </div>
